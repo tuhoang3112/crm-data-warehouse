@@ -1,3 +1,5 @@
+[English](README.md)
+
 # Data Warehouse Migration: Từ Pipedrive sang Rework CRM
 
 ## Bối cảnh
