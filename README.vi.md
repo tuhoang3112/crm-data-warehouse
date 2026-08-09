@@ -33,6 +33,29 @@ Dataform (mart)  →  Snowflake Schema: fact + dimension
 Power BI
 ```
 
+### Cấu trúc dữ liệu CRM
+
+Dữ liệu CRM xoay quanh **Deal** và các thông tin liên quan như Contact, Account, Pipeline, Stage, User và Activity.
+
+```
+Lead / Contact
+      │
+      ▼
+    Deal
+      │
+      ├── thuộc Pipeline
+      │        └── Stage
+      │
+      ├── được phụ trách bởi User
+      │
+      ├── liên kết với Account
+      │
+      └── có các Activity
+             ├── Call
+             ├── Note
+             └── Change Log
+```
+
 ### Data Mart
 
 Data Mart được thiết kế theo mô hình **Snowflake Schema**, bao gồm:
@@ -42,7 +65,7 @@ Data Mart được thiết kế theo mô hình **Snowflake Schema**, bao gồm:
 * `dim_pipeline`, `dim_stage`, `dim_contact`, `dim_user` — các dimension table chứa thông tin mô tả phục vụ phân tích
 * `dim_account` — lưu thông tin account/company, được tách riêng để dùng chung cho deal và contact
 
-![Data Warehouse Architecture](erd-datamart.png)
+![Data Warehouse Architecture](assets/erd-datamart.png)
 
 ---
 
