@@ -142,4 +142,4 @@ The new pipeline also kept the historical Pipedrive data accurate, so key Sales 
 
 As a result, the Sales team could continue using their reports without interruption after switching to the new CRM.
 
-> **Note:** This project was built using real company data. The dataset and sensitive information in this repository have been replaced with synthetic data to protect confidentiality.
+> **Note:** This project was built using real company data. To protect confidentiality, sensitive information shown in dashboards has been blurred or redacted, while confidential values, keys, and credentials have been removed from the code and files shared in this repository.
