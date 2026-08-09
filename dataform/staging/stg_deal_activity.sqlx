@@ -1,0 +1,75 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho deal_activities - lịch sử hoạt động (note, call, changelog...) của từng deal"
+}
+
+SELECT
+
+  -- Identifiers
+  SAFE_CAST(JSON_VALUE(feed, '$.id') AS INT64) AS activity_id,
+  SAFE_CAST(JSON_VALUE(deal, '$.id') AS INT64) AS deal_id,
+
+  -- Text fields
+  JSON_VALUE(feed, '$.type') AS activity_type,
+  JSON_VALUE(feed, '$.metatype') AS activity_metatype,
+  JSON_VALUE(feed, '$.subtype') AS activity_subtype,
+
+  CASE JSON_VALUE(feed, '$.metatype')
+    WHEN 'note' THEN 'Ghi chú'
+    WHEN 'changelog' THEN 'Thay đổi hệ thống'
+    WHEN 'log' THEN 'Nhật ký hoạt động'
+    WHEN 'call' THEN 'Cuộc gọi'
+    WHEN 'email' THEN 'Email'
+    WHEN 'meeting' THEN 'Cuộc họp'
+    WHEN 'files' THEN 'File'
+    ELSE JSON_VALUE(feed, '$.metatype')
+  END AS activity_type_label,
+
+  -- Content: bỏ HTML tag, decode entity (&amp; &gt; &lt; &#58;), gộp khoảng trắng thừa
+  NULLIF(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(JSON_VALUE(feed, '$.content'), r'<[^>]+>', ' '),
+              r'&amp;', '&'
+            ),
+            r'&gt;', '>'
+          ),
+          r'&lt;', '<'
+        ),
+        r'&#58;', ':'
+      ),
+      r'\s+', ' '
+    ),
+    ''
+  ) AS activity_content,
+
+  -- Numeric / status fields
+  SAFE_CAST(JSON_VALUE(feed, '$.status') AS INT64) AS activity_status,
+  SAFE_CAST(JSON_VALUE(feed, '$.user_id') AS INT64) AS owner_user_id,    -- FK tới dim_user
+  SAFE_CAST(JSON_VALUE(feed, '$.is_pinned') AS INT64) AS is_pinned,
+
+  -- Timestamps
+  DATETIME(
+    TIMESTAMP_SECONDS(SAFE_CAST(JSON_VALUE(feed, '$.since') AS INT64)),
+    'Asia/Bangkok'
+  ) AS created_at,
+
+  DATETIME(
+    TIMESTAMP_SECONDS(SAFE_CAST(JSON_VALUE(feed, '$.last_update') AS INT64)),
+    'Asia/Bangkok'
+  ) AS updated_at,
+
+  -- Metadata
+  _airbyte_extracted_at
+
+FROM ${ref("deal_activities")},
+UNNEST(JSON_QUERY_ARRAY(feeds)) AS feed
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY activity_id
+  ORDER BY _airbyte_extracted_at DESC
+) = 1
