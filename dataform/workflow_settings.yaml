@@ -1,4 +1,4 @@
-defaultProject: {{PROJECT_ID}}
+defaultProject: your-project-id
 defaultDataset: dataform
 defaultLocation: us-central1
 defaultAssertionDataset: dataform_assertions
