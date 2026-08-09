@@ -1,0 +1,47 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho pipeline - danh sách các pipeline/phễu bán hàng"
+}
+
+SELECT
+
+  -- Identifiers
+  id AS pipeline_id,
+
+  -- Text fields (decode HTML entity: &#124; -> |, &amp; -> &, bỏ HTML tag)
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ) AS pipeline_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(content, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ) AS pipeline_content,
+
+  -- Numeric / status fields
+  status AS pipeline_status,
+  user_id AS owner_user_id,      -- FK tới bảng user
+  deal_prob AS default_probability,
+
+  -- Arrays (giữ nguyên JSON thô, UNNEST khi cần dùng)
+  owners,
+  followers,
+
+  -- Timestamps (convert unix timestamp -> giờ Bangkok/VN)
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(since AS INT64)), 'Asia/Bangkok') AS created_at,
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+
+  -- Metadata
+  _airbyte_extracted_at
+
+FROM ${ref("pipeline")}
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY id
+  ORDER BY _airbyte_extracted_at DESC
+) = 1
