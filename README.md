@@ -33,6 +33,13 @@ Dataform (mart)  →  Snowflake Schema: fact + dimension
 Power BI
 ```
 
+| Layer | Tool | Implementation |
+|---|---|---|
+| Data Ingestion | Airbyte | [`View Connector`](./airbyte-custom-connector/) |
+| Data Warehouse | BigQuery | [`View Raw Layer`](./assets/bigquery-raw-layer.png) |
+| Transformation & Modeling | Dataform | [`View Models`](./dataform/) |
+| Analytics | Power BI | [`View Dashboard`](./sales_dashboard/) |
+
 ### CRM Data Structure
 
 Before building the Data Mart, the main CRM entities were mapped at a conceptual level to understand how a deal connects with other parts of the sales process.
