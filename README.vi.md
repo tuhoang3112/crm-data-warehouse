@@ -33,12 +33,12 @@ Dataform (mart)  →  Snowflake Schema: fact + dimension
 Power BI
 ```
 
-| Layer | Công cụ | Chi tiết |
+| Layer | Tool | Chi tiết |
 |---|---|---|
-| Data Ingestion | Airbyte | [`Xem cấu hình Connector`](./airbyte-custom-connector/) |
-| Data Warehouse | BigQuery | [`Xem dữ liệu Raw`](./assets/bigquery-raw-layer.png) |
-| Transformation & Modeling | Dataform | [`Xem Data Models`](./dataform/) |
-| Analytics | Power BI | [`Xem Dashboard`](./sales_dashboard/) |
+| Data Ingestion | Airbyte | [`View Connector`](./airbyte-custom-connector/) |
+| Data Warehouse | BigQuery | [`View Raw Layer`](./assets/bigquery-raw-layer.png) |
+| Transformation & Modeling | Dataform | [`View Models`](./dataform/) |
+| Analytics | Power BI | [`View Dashboard`](./sales_dashboard/) |
 
 ### Cấu trúc dữ liệu CRM
 
