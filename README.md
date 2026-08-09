@@ -42,7 +42,7 @@ The Data Mart follows a **Snowflake Schema**, including:
 * `dim_pipeline`, `dim_stage`, `dim_contact`, `dim_user` — dimension tables containing information used for analysis
 * `dim_account` — stores account/company information in a separate table shared by deals and contacts
 
-*(Insert ERD here)*
+![Data Warehouse Architecture](erd-datamart.png)
 
 ---
 
