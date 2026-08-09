@@ -1,0 +1,40 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Fact: giao dịch/deal trong pipeline bán hàng"
+}
+
+SELECT
+  deal_id,
+  contact_id,
+  pipeline_id,
+  stage_id,
+  owner_user_id,
+  deal_name,
+  deal_status,
+  is_alumni,
+  group_registration,
+  course_selected,
+  learning_format,
+  class_code,
+  expectation,
+  promotion_code,
+  gift,
+  need_consulting,
+  preferred_consulting_time,
+  pain_point_captured,
+  pending_reason,
+  pending_reason_detail,
+  has_followup_plan,
+  next_step,
+  lost_reason,
+  lost_reason_detail,
+  utm_source,
+  utm_medium,
+  utm_content,
+  utm_product,
+  utm_person,
+  created_at,
+  updated_at,
+  closed_at
+FROM ${ref("stg_deal")}
