@@ -33,6 +33,29 @@ Dataform (mart)  →  Snowflake Schema: fact + dimension
 Power BI
 ```
 
+### CRM Data Structure
+
+Before building the Data Mart, the main CRM entities were mapped at a conceptual level to understand how a deal connects with other parts of the sales process.
+
+```
+Lead / Contact
+      │
+      ▼
+    Deal
+      │
+      ├── belongs to Pipeline
+      │        └── Stage
+      │
+      ├── owned by User
+      │
+      ├── linked to Account
+      │
+      └── has Activities
+             ├── Call
+             ├── Note
+             └── Change Log
+```
+
 ### Data Mart
 
 The Data Mart follows a **Snowflake Schema**, including:
