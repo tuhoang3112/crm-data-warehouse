@@ -1,0 +1,11 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: các bước (giai đoạn) trong từng pipeline"
+}
+
+SELECT
+  stage_id,
+  pipeline_id,
+  stage_name
+FROM ${ref("stg_stage")}
