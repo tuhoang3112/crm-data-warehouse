@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Fact: lịch sử hoạt động (note, call, changelog...) gắn với từng deal"
+}
+
+SELECT
+  activity_id,
+  deal_id,                    -- FK tới fct_deal
+  activity_type_label AS activity_type,
+  activity_content,
+  owner_user_id,               -- FK tới dim_user
+  created_at,
+  updated_at
+FROM ${ref("stg_deal_activity")}
