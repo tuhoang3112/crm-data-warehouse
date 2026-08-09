@@ -33,6 +33,13 @@ Dataform (mart)  →  Snowflake Schema: fact + dimension
 Power BI
 ```
 
+| Layer | Công cụ | Chi tiết |
+|---|---|---|
+| Data Ingestion | Airbyte | [`Xem cấu hình Connector`](./airbyte-custom-connector/) |
+| Data Warehouse | BigQuery | [`Xem dữ liệu Raw`](./assets/bigquery-raw-layer.png) |
+| Transformation & Modeling | Dataform | [`Xem Data Models`](./dataform/) |
+| Analytics | Power BI | [`Xem Dashboard`](./sales_dashboard/) |
+
 ### Cấu trúc dữ liệu CRM
 
 Dữ liệu CRM xoay quanh **Deal** và các thông tin liên quan như Contact, Account, Pipeline, Stage, User và Activity.
