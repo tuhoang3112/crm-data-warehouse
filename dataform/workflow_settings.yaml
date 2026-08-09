@@ -1,4 +1,4 @@
-defaultProject: tm-database-486412
+defaultProject: {{PROJECT_ID}}
 defaultDataset: dataform
 defaultLocation: us-central1
 defaultAssertionDataset: dataform_assertions
