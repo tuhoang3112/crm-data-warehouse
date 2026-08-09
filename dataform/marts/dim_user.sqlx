@@ -1,0 +1,13 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: danh sách nhân viên (nguồn từ Google Sheet nội bộ)"
+}
+
+SELECT
+  SAFE_CAST(id AS INT64) AS user_id,
+  username,
+  CONCAT(last_name, ' ', first_name) AS full_name,
+  title AS job_title,
+  email
+FROM ${ref("user")}
