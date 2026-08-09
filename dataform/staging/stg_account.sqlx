@@ -1,0 +1,125 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho account - clean raw data, decode HTML, tách address JSON và pivot custom field quan trọng"
+}
+
+WITH form_normalized AS (
+  SELECT
+    id AS account_id,
+    JSON_VALUE(field, '$.code') AS code,
+    JSON_VALUE(field, '$.type') AS type,
+    CASE
+      WHEN JSON_VALUE(field, '$.type') = 'select' THEN JSON_VALUE(field, '$.display')
+      ELSE JSON_VALUE(field, '$.value')
+    END AS final_value
+  FROM ${ref("account")}, UNNEST(JSON_QUERY_ARRAY(form)) AS field
+),
+
+form_pivot AS (
+  SELECT
+    account_id,
+    MAX(IF(code = 'custom_facebook', final_value, NULL)) AS facebook,
+    MAX(IF(code = 'custom_address', final_value, NULL)) AS account_address,
+    MAX(IF(code = 'custom_pipedrive_organization_id', final_value, NULL)) AS pipedrive_organization_id,
+    MAX(IF(code = 'custom_business_domain', final_value, NULL)) AS business_domain,
+    MAX(IF(code = 'custom_company_size', final_value, NULL)) AS company_size,
+    MAX(IF(code = 'custom_industry', final_value, NULL)) AS industry,
+    MAX(IF(code = 'custom_ma_so_thue', final_value, NULL)) AS ma_so_thue,
+    MAX(IF(code = 'custom_website', final_value, NULL)) AS website,
+    MAX(IF(code = 'custom_email_nhan_hoa_don', final_value, NULL)) AS email_nhan_hoa_don,
+    MAX(IF(code = 'custom_linkedin_profile', final_value, NULL)) AS linkedin_profile,
+    MAX(IF(code = 'custom_description', final_value, NULL)) AS account_description,
+    MAX(IF(code = 'custom_brand_name', final_value, NULL)) AS brand_name,
+
+    -- Ngày account được tạo ở CRM cũ (Pipedrive), NULL nếu account không phải data migrate
+    DATETIME(
+      TIMESTAMP_SECONDS(
+        SAFE_CAST(MAX(IF(code = 'custom_organization_created_pipedrive', final_value, NULL)) AS INT64)
+      ),
+      'Asia/Bangkok'
+    ) AS pipedrive_created_at,
+
+    -- Ngày cập nhật cuối ở CRM cũ (Pipedrive) - chỉ để tham khảo, không dùng cho updated_at
+    DATETIME(
+      TIMESTAMP_SECONDS(
+        SAFE_CAST(MAX(IF(code = 'USLACNP8CDHR6KF2XVPKEQ58N', final_value, NULL)) AS INT64)
+      ),
+      'Asia/Bangkok'
+    ) AS pipedrive_updated_at
+
+  FROM form_normalized
+  GROUP BY account_id
+)
+
+SELECT
+
+  -- Identifiers
+  a.id AS account_id,
+  a.service_id AS account_service_id,
+
+  -- Text fields (decode HTML entity, bỏ tag)
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(a.name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ) AS account_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(a.content, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ) AS account_content,
+
+  -- Address (JSON -> tách field cụ thể)
+  JSON_VALUE(a.address, '$.name') AS address_raw,
+  SAFE_CAST(JSON_VALUE(a.address, '$.lat') AS FLOAT64) AS latitude,
+  SAFE_CAST(JSON_VALUE(a.address, '$.lng') AS FLOAT64) AS longitude,
+
+  -- Numeric / status fields
+  a.status AS account_status,
+  a.owner_id AS owner_user_id,      -- FK tới bảng user
+  a.creator_id,
+  a.currency_id,
+  a.num_calls,
+  a.num_mails,
+  a.num_notes,
+  a.num_meetings,
+  a.num_quicklogs,
+
+  -- Custom fields (pivot từ form)
+  p.facebook,
+  p.account_address,
+  p.pipedrive_organization_id,
+  p.business_domain,
+  p.company_size,
+  p.industry,
+  p.ma_so_thue,
+  p.website,
+  p.email_nhan_hoa_don,
+  p.linkedin_profile,
+  p.account_description,
+  p.brand_name,
+
+  -- Timestamps
+  p.pipedrive_created_at,           -- NULL nếu account không phải data migrate
+  p.pipedrive_updated_at,           -- chỉ để tham khảo, không dùng cho updated_at chính
+
+  COALESCE(
+    p.pipedrive_created_at,
+    DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(a.since AS INT64)), 'Asia/Bangkok')
+  ) AS created_at,
+
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(a.last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+
+  -- Metadata
+  a._airbyte_extracted_at
+
+FROM ${ref("account")} a
+LEFT JOIN form_pivot p ON a.id = p.account_id
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY a.id
+  ORDER BY a._airbyte_extracted_at DESC
+) = 1

@@ -1,0 +1,143 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho contact - clean raw data, decode HTML, pivot custom field quan trọng"
+}
+
+WITH form_normalized AS (
+  SELECT
+    id AS contact_id,
+    JSON_VALUE(field, '$.code') AS code,
+    JSON_VALUE(field, '$.type') AS type,
+    CASE
+      WHEN JSON_VALUE(field, '$.type') = 'select' THEN JSON_VALUE(field, '$.display')
+      ELSE JSON_VALUE(field, '$.value')
+    END AS final_value
+  FROM ${ref("contact")}, UNNEST(JSON_QUERY_ARRAY(form)) AS field
+),
+
+form_pivot AS (
+  SELECT
+    contact_id,
+    MAX(IF(code = 'custom_dob', final_value, NULL)) AS date_of_birth,
+    MAX(IF(code = 'custom_customers_course', final_value, NULL)) AS customers_course,
+    MAX(IF(code = 'custom_brand_awareness', final_value, NULL)) AS brand_awareness,
+    MAX(IF(code = 'custom_university', final_value, NULL)) AS university,
+    MAX(IF(code = 'custom_academic_year', final_value, NULL)) AS academic_year,
+    MAX(IF(code = 'custom_email', final_value, NULL)) AS custom_email,
+    MAX(IF(code = 'custom_phone_number', final_value, NULL)) AS custom_phone_number,
+    MAX(IF(code = 'custom_pipedrive_account_id', final_value, NULL)) AS pipedrive_account_id,
+    MAX(IF(code = 'custom_name', final_value, NULL)) AS custom_name,
+    MAX(IF(code = 'custom_industry', final_value, NULL)) AS industry,
+    MAX(IF(code = 'custom_facebook', final_value, NULL)) AS facebook,
+    MAX(IF(code = 'custom_workplace', final_value, NULL)) AS workplace,
+    MAX(IF(code = 'custom_pipedrive_person_id', final_value, NULL)) AS pipedrive_person_id,
+    MAX(IF(code = 'custom_purpose_of_learning', final_value, NULL)) AS purpose_of_learning,
+    MAX(IF(code = 'custom_company_size', final_value, NULL)) AS company_size,
+    MAX(IF(code = 'custom_pain_point', final_value, NULL)) AS pain_point,
+    MAX(IF(code = 'custom_location', final_value, NULL)) AS location,
+    MAX(IF(code = 'custom_why_tm', final_value, NULL)) AS why_tm,
+
+    -- Ngày cập nhật cuối (custom field riêng, khác với last_update chuẩn của Rework)
+    DATETIME(
+      TIMESTAMP_SECONDS(
+        SAFE_CAST(MAX(IF(code = 'custom_last_update', final_value, NULL)) AS INT64)
+      ),
+      'Asia/Bangkok'
+    ) AS custom_last_update,
+
+    -- Ngày contact được tạo ở CRM cũ (Pipedrive), NULL nếu contact không phải data migrate
+    DATETIME(
+      TIMESTAMP_SECONDS(
+        SAFE_CAST(MAX(IF(code = 'NUWALZZD7KJ9HVUFG6PDULRY5', final_value, NULL)) AS INT64)
+      ),
+      'Asia/Bangkok'
+    ) AS person_created_at_form
+
+  FROM form_normalized
+  GROUP BY contact_id
+)
+
+SELECT
+
+  -- Identifiers
+  c.id AS contact_id,
+  c.service_id AS contact_service_id,
+  c.account_id,                         -- FK tới stg_account
+
+  -- Text fields (decode HTML entity, bỏ tag)
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(c.name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ) AS contact_name,
+
+  c.first_name,
+  c.last_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(c.account_name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ) AS account_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(c.content, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ) AS contact_content,
+
+  -- Contact info (field chuẩn, có sẵn ở top-level)
+  c.email,
+  c.phone,
+  c.title AS job_title,
+
+  -- Numeric / status fields
+  c.status AS contact_status,
+  c.owner_id AS owner_user_id,          -- FK tới bảng user
+  c.creator_id,
+  c.num_calls,
+  c.num_mails,
+  c.num_notes,
+  c.num_meetings,
+  c.num_quicklogs,
+
+  -- Custom fields (pivot từ form)
+  p.date_of_birth,
+  p.customers_course,
+  p.brand_awareness,
+  p.university,
+  p.academic_year,
+  p.custom_email,
+  p.custom_phone_number,
+  p.pipedrive_account_id,
+  p.custom_name,
+  p.industry,
+  p.facebook,
+  p.workplace,
+  p.pipedrive_person_id,
+  p.custom_last_update,
+  p.purpose_of_learning,
+  p.company_size,
+  p.pain_point,
+  p.location,
+  p.why_tm,
+
+  -- Timestamps (ưu tiên ngày tạo thật từ CRM cũ nếu có, fallback sang ngày Rework ghi nhận)
+  p.person_created_at_form,             -- NULL nếu contact không phải data migrate
+  COALESCE(
+    p.person_created_at_form,
+    DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(c.since AS INT64)), 'Asia/Bangkok')
+  ) AS created_at,
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(c.last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+
+  -- Metadata
+  c._airbyte_extracted_at
+
+FROM ${ref("contact")} c
+LEFT JOIN form_pivot p ON c.id = p.contact_id
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY c.id
+  ORDER BY c._airbyte_extracted_at DESC
+) = 1

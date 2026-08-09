@@ -1,0 +1,11 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: danh sách pipeline/phễu bán hàng"
+}
+
+SELECT
+  pipeline_id,
+  pipeline_name,
+  pipeline_content
+FROM ${ref("stg_pipeline")}

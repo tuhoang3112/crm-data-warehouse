@@ -1,0 +1,270 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho deal - clean raw data, decode HTML, pivot custom field quan trọng"
+}
+
+WITH deal_with_status AS (
+  SELECT
+    d.*,
+    CASE
+      WHEN SAFE_CAST(d.status AS INT64) = 10 THEN 'won'
+      WHEN SAFE_CAST(d.status AS INT64) = 1 THEN 'open'
+      ELSE 'lost'
+    END AS computed_status
+  FROM ${ref("deal")} d
+),
+
+form_normalized AS (
+  SELECT
+    id AS deal_id,
+    JSON_VALUE(field, '$.code') AS code,
+    JSON_VALUE(field, '$.type') AS type,
+    CASE
+      WHEN JSON_VALUE(field, '$.type') = 'select' THEN JSON_VALUE(field, '$.display')
+      ELSE JSON_VALUE(field, '$.value')
+    END AS final_value
+  FROM ${ref("deal")}, UNNEST(JSON_QUERY_ARRAY(form)) AS field
+),
+
+form_pivot AS (
+  SELECT
+    deal_id,
+
+    -- Thông tin khách hàng (2 field cùng ý nghĩa, gộp lại)
+    MAX(IF(code IN ('custom_name', 'RJV3LTDMAT5ZHBKEFTRM3EZ9S'), NULLIF(final_value, ''), NULL)) AS custom_name,
+    MAX(IF(code IN ('custom_email', 'CGJJ7MPJQ3QXA8HNLG3AYP58L'), NULLIF(final_value, ''), NULL)) AS custom_email,
+    MAX(IF(code = 'custom_phone_number', NULLIF(final_value, ''), NULL)) AS custom_phone_number,
+    MAX(IF(code = 'custom_nam_sinh', NULLIF(final_value, ''), NULL)) AS birth_year,
+    MAX(IF(code = 'custom_cuu_hoc_vien', NULLIF(final_value, ''), NULL)) AS is_alumni,
+    MAX(IF(code = 'custom_so_cccd', NULLIF(final_value, ''), NULL)) AS national_id,
+    MAX(IF(code = 'custom_dia_chi_xuat_hoa_don', NULLIF(final_value, ''), NULL)) AS invoice_address,
+    MAX(IF(code = 'custom_noi_hoc_tap_lam_viec', NULLIF(final_value, ''), NULL)) AS workplace,
+    MAX(IF(code = 'custom_link_facebook', NULLIF(final_value, ''), NULL)) AS facebook_link,
+    MAX(IF(code = 'custom_bank_account', NULLIF(final_value, ''), NULL)) AS bank_account,
+    MAX(IF(code = 'custom_tai_khoan', NULLIF(final_value, ''), NULL)) AS account_type,
+    MAX(IF(code = 'custom_sao_ke', NULLIF(final_value, ''), NULL)) AS bank_statement,
+    MAX(IF(code = 'custom_dang_ky_nhom', NULLIF(final_value, ''), NULL)) AS group_registration,
+
+    -- Thông tin khoá học / mã lớp / quà tặng
+    MAX(IF(code IN ('custom_initial_interested_course', 'custom_khoa_hoc_quan_tam'), NULLIF(final_value, ''), NULL)) AS course_interested,
+    MAX(IF(code = 'final_selected_course', NULLIF(final_value, ''), NULL)) AS course_selected,
+    MAX(IF(code = 'custom_san_pham', NULLIF(final_value, ''), NULL)) AS product_selected,
+    MAX(IF(code = 'custom_hinh_thuc_hoc', NULLIF(final_value, ''), NULL)) AS learning_format,
+
+    -- Ưu tiên custom_ma_lop trước, fallback sang custom_chon_ma_lop
+    COALESCE(
+      MAX(IF(code = 'custom_ma_lop', NULLIF(final_value, ''), NULL)),
+      MAX(IF(code = 'custom_chon_ma_lop', NULLIF(final_value, ''), NULL))
+    ) AS class_code,
+
+    MAX(IF(code = 'custom_expectation', NULLIF(final_value, ''), NULL)) AS expectation,
+    MAX(IF(code = 'custom_promotion_code', NULLIF(final_value, ''), NULL)) AS promotion_code,
+    MAX(IF(code = 'custom_promotion', NULLIF(final_value, ''), NULL)) AS promotion,
+    MAX(IF(code = 'custom_qua_tang', NULLIF(final_value, ''), NULL)) AS gift,
+
+    -- Tình trạng tư vấn
+    MAX(IF(code = 'custom_can_tu_van_khong', NULLIF(final_value, ''), NULL)) AS need_consulting,
+    MAX(IF(code = 'custom_khoang_thoi_gian_tu_van_phu_hop', NULLIF(final_value, ''), NULL)) AS preferred_consulting_time,
+    MAX(IF(code = 'custom_co_khai_thac_duoc_pain_point_cua_khach', NULLIF(final_value, ''), NULL)) AS pain_point_captured,
+    MAX(IF(code = 'custom_pending_reason', NULLIF(final_value, ''), NULL)) AS pending_reason,
+    MAX(IF(code = 'custom_ly_do_chi_tiet_pending', NULLIF(final_value, ''), NULL)) AS pending_reason_detail,
+    MAX(IF(code = 'custom_co_ke_hoach_follow_up', NULLIF(final_value, ''), NULL)) AS has_followup_plan,
+    
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          SAFE_CAST(
+            SAFE.FROM_BASE64(
+              REGEXP_REPLACE(
+                NULLIF(MAX(IF(code = 'custom_next_step', final_value, NULL)), ''),
+                r'^PHA-', ''
+              )
+            )
+            AS STRING
+          ),
+          r'<[^>]+>', ' '
+        ),
+        r'&amp;', '&'
+      ),
+      r'\s+', ' '
+    ) AS next_step,
+
+    -- Ghi chú: gộp ghi chú Rework và ghi chú Pipedrive (đã decode base64) làm 1
+    ARRAY_TO_STRING(
+      [
+        NULLIF(MAX(IF(code = 'custom_ghi_chu', final_value, NULL)), ''),
+        SAFE_CAST(
+          SAFE.FROM_BASE64(NULLIF(MAX(IF(code = 'custom_ghi_chu_pipedrive', final_value, NULL)), ''))
+          AS STRING
+        )
+      ],
+      '; '
+    ) AS notes,
+
+    -- B2B đặc thù
+    MAX(IF(code = 'custom_company_budget_b2b', NULLIF(final_value, ''), NULL)) AS company_budget_b2b,
+    MAX(IF(code = 'custom_requirement_b2b', NULLIF(final_value, ''), NULL)) AS requirement_b2b,
+
+    -- Marketing attribution (UTM)
+    MAX(IF(code = 'custom_utm_source', NULLIF(final_value, ''), NULL)) AS utm_source,
+    MAX(IF(code = 'custom_utm_medium', NULLIF(final_value, ''), NULL)) AS utm_medium,
+    MAX(IF(code = 'custom_utm_campaign', NULLIF(final_value, ''), NULL)) AS utm_campaign,
+    MAX(IF(code = 'custom_utm_content', NULLIF(final_value, ''), NULL)) AS utm_content,
+    MAX(IF(code = 'custom_utm_product', NULLIF(final_value, ''), NULL)) AS utm_product,
+    MAX(IF(code = 'custom_utm_person', NULLIF(final_value, ''), NULL)) AS utm_person,
+
+    -- Migrate từ Pipedrive
+    MAX(IF(code = 'custom_pipedrive_contact_id', NULLIF(final_value, ''), NULL)) AS pipedrive_contact_id,
+    MAX(IF(code = 'custom_pipedrive_organization_id', NULLIF(final_value, ''), NULL)) AS pipedrive_organization_id,
+    MAX(IF(code = 'custom_pipedrive_deal_id', NULLIF(final_value, ''), NULL)) AS pipedrive_deal_id,
+    MAX(IF(code = 'custom_pipedrive_product_quantity', NULLIF(final_value, ''), NULL)) AS pipedrive_product_quantity,
+    MAX(IF(code = 'custom_pipedrive_product_amount', NULLIF(final_value, ''), NULL)) AS pipedrive_product_amount,
+    MAX(IF(code = 'custom_pipedrive_lost_reason', NULLIF(final_value, ''), NULL)) AS pipedrive_lost_reason,
+
+    -- Timestamps từ Pipedrive
+    DATETIME(
+      TIMESTAMP_SECONDS(SAFE_CAST(MAX(IF(code = 'MXEWVFF7Q43T9UFT62KVJ9LRG', final_value, NULL)) AS INT64)),
+      'Asia/Bangkok'
+    ) AS pipedrive_created_at,
+
+    DATETIME(
+      TIMESTAMP_SECONDS(SAFE_CAST(MAX(IF(code = 'custom_pipedrive_won_time', final_value, NULL)) AS INT64)),
+      'Asia/Bangkok'
+    ) AS pipedrive_won_at,
+
+    DATETIME(
+      TIMESTAMP_SECONDS(SAFE_CAST(MAX(IF(code = 'custom_pipedrive_lost_time', final_value, NULL)) AS INT64)),
+      'Asia/Bangkok'
+    ) AS pipedrive_lost_at
+
+  FROM form_normalized
+  GROUP BY deal_id
+)
+
+SELECT
+
+  -- Identifiers
+  d.id AS deal_id,
+  d.pipeline_id,                        -- FK tới stg_pipeline
+  d.stage_id,                           -- FK tới stg_stage
+  d.contact_id,                         -- FK tới stg_contact
+  d.account_id,                         -- FK tới stg_account
+
+  -- Text fields (decode HTML entity, bỏ tag)
+  NULLIF(REGEXP_REPLACE(
+    REGEXP_REPLACE(d.name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ), '') AS deal_name,
+
+  NULLIF(REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(d.overview, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ), '') AS deal_overview,
+
+  NULLIF(d.contact_name, '') AS contact_name,
+  NULLIF(d.account_name, '') AS account_name,
+
+  -- Numeric / status fields
+  d.computed_status AS deal_status,
+  d.starred,
+  d.owner_id AS owner_user_id,          -- FK tới bảng user
+  d.creator_id,
+  d.currency_id,
+
+  -- Số tiền: ưu tiên số liệu từ Pipedrive, fallback về value gốc của Rework
+  COALESCE(
+    SAFE_CAST(p.pipedrive_product_amount AS NUMERIC),
+    NULLIF(SAFE_CAST(d.value AS NUMERIC), 0)
+  ) AS deal_value,
+
+  NULLIF(d.prob, 0) AS win_probability,
+
+  -- Lý do fail: map mã số sang text đọc được
+  CASE
+    WHEN d.failed_reason_id = 0 THEN NULL
+    WHEN d.failed_reason_id = 37 THEN 'Bad Timing: Không sắp xếp được thời gian học'
+    WHEN d.failed_reason_id = 38 THEN 'Relevance: Use Case Misfit: Nhu cầu không đúng với sản phẩm'
+    WHEN d.failed_reason_id = 39 THEN 'Communication: Not Connected: Không liên hệ được'
+    WHEN d.failed_reason_id = 40 THEN 'Low engagement: Không còn nhu cầu học'
+    WHEN d.failed_reason_id = 41 THEN 'Budget: Giá quá cao'
+    WHEN d.failed_reason_id = 42 THEN 'Trash: Không có nhu cầu'
+    WHEN d.failed_reason_id = 43 THEN 'Choose Competitor: Không học online'
+    WHEN d.failed_reason_id = 44 THEN 'Choose Competitor: Đã đi học bên khác'
+    WHEN d.failed_reason_id = 45 THEN 'Trash: Đăng ký trùng deal'
+    WHEN d.failed_reason_id = 46 THEN 'Communication: Invalid Contact'
+    WHEN d.failed_reason_id = 53 THEN 'Relevance: Not ICP fit'
+    WHEN d.failed_reason_id = 54 THEN 'Communication: Ghosted After Demo/Call'
+    WHEN d.failed_reason_id = 55 THEN 'Budget: Not willing to pay'
+    WHEN d.failed_reason_id = 56 THEN 'Bad Timing: No Immediate Priority'
+    WHEN d.failed_reason_id = 58 THEN 'Communication: No Response'
+    ELSE CAST(d.failed_reason_id AS STRING)
+  END AS lost_reason,
+
+  ARRAY_TO_STRING(
+    [
+      NULLIF(REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(d.failed_content, r'<[^>]+>', ' '),
+          r'&amp;', '&'
+        ),
+        r'\s+', ' '
+      ), ''),
+      p.pipedrive_lost_reason
+    ],
+    ', '
+  ) AS lost_reason_detail,
+
+  -- Activity stats
+  d.num_calls,
+  d.num_mails,
+  d.num_notes,
+  d.num_meetings,
+  d.num_quicklogs,
+
+  -- Custom fields (pivot từ form) - dùng EXCEPT thay vì liệt kê từng cột
+  p.* EXCEPT(deal_id, pipedrive_created_at, pipedrive_won_at, pipedrive_lost_at, pipedrive_product_amount, pipedrive_lost_reason),
+
+  -- Timestamps (ưu tiên ngày thật từ CRM cũ nếu có, fallback sang ngày Rework ghi nhận)
+  p.pipedrive_created_at,               -- NULL nếu deal không phải data migrate
+
+  COALESCE(
+    p.pipedrive_created_at,
+    DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.since AS INT64)), 'Asia/Bangkok')
+  ) AS created_at,
+
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.stage_start AS INT64)), 'Asia/Bangkok') AS stage_start_at,
+
+  -- Closed at: ưu tiên won/lost time từ Pipedrive nếu có, fallback về closed_at của Rework
+  COALESCE(
+    p.pipedrive_won_at,
+    p.pipedrive_lost_at,
+    IF(d.closed_at > 0,
+      DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.closed_at AS INT64)), 'Asia/Bangkok'),
+      NULL)
+  ) AS closed_at,
+
+  IF(d.expected_close > 0,
+    DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.expected_close AS INT64)), 'Asia/Bangkok'),
+    NULL
+  ) AS expected_close_at,
+
+  IF(d.expected_deadline > 0,
+    DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(d.expected_deadline AS INT64)), 'Asia/Bangkok'),
+    NULL
+  ) AS expected_deadline_at,
+
+  -- Metadata
+  d._airbyte_extracted_at
+
+FROM deal_with_status d
+LEFT JOIN form_pivot p ON d.id = p.deal_id
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY d.id
+  ORDER BY d._airbyte_extracted_at DESC
+) = 1

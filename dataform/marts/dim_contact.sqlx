@@ -1,0 +1,24 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: thông tin liên hệ khách hàng"
+}
+
+SELECT
+  contact_id,
+  account_id,
+  contact_name,
+  email,
+  phone,
+  date_of_birth,
+  facebook,
+  university,
+  location,
+  job_title,
+  customers_course,
+  academic_year,
+  brand_awareness,
+  why_tm,
+  created_at,
+  updated_at
+FROM ${ref("stg_contact")}

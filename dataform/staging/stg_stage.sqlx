@@ -1,0 +1,50 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging layer cho stage - các bước (giai đoạn) trong từng pipeline"
+}
+
+SELECT
+
+  -- Identifiers
+  id AS stage_id,
+  pipeline_id,                    -- FK tới stg_pipeline
+
+  -- Text fields
+  name AS stage_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(content, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ) AS stage_content,
+
+  color AS stage_color,
+
+  -- Numeric / status fields
+  status AS stage_status,
+  real_order AS stage_order,
+  user_id AS owner_user_id,       -- FK tới bảng user
+  prob AS win_probability,
+  rotting AS rotting_days,
+  use_rotting,
+
+  -- Arrays (giữ nguyên JSON thô, UNNEST khi cần dùng)
+  owners,
+  followers,
+
+  -- Timestamps (convert unix timestamp -> giờ Bangkok/VN)
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(since AS INT64)), 'Asia/Bangkok') AS created_at,
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+
+  -- Metadata
+  _airbyte_extracted_at
+
+FROM ${ref("stage")}
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY id
+  ORDER BY _airbyte_extracted_at DESC
+) = 1

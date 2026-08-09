@@ -1,0 +1,5 @@
+defaultProject: {{PROJECT_ID}}
+defaultDataset: dataform
+defaultLocation: us-central1
+defaultAssertionDataset: dataform_assertions
+dataformCoreVersion: 3.0.52
