@@ -1,0 +1,19 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: thông tin công ty/tổ chức khách hàng"
+}
+
+SELECT
+  account_id,
+  account_name,
+  address_raw AS account_address,
+  account_content AS account_description,
+  brand_name,
+  industry,
+  website,
+  linkedin_profile,
+  company_size,
+  created_at,
+  updated_at
+FROM ${ref("stg_account")}
