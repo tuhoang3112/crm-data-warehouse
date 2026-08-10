@@ -45,19 +45,18 @@ Power BI
 Dữ liệu CRM xoay quanh **Deal** và các thông tin liên quan như Contact, Account, Pipeline, Stage, User và Activity.
 
 ```
-Lead / Contact
-      │
-      ▼
-    Deal
-      │
-      ├── thuộc Pipeline
-      │        └── Stage
-      │
-      ├── được phụ trách bởi User
-      │
-      ├── liên kết với Account
-      │
-      └── có các Activity
+Contact ── linked to Account
+   │
+   ▼
+ Deal
+   │
+   ├── belongs to Pipeline
+   │        └── Stage
+   │
+   ├── owned by User
+   │
+   │
+   └── has Activities
              ├── Call
              ├── Note
              └── Change Log
