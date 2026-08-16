@@ -71,7 +71,7 @@ Data Mart được thiết kế theo mô hình **Snowflake Schema**, bao gồm:
 * `dim_pipeline`, `dim_stage`, `dim_contact`, `dim_user` — các dimension table chứa thông tin mô tả phục vụ phân tích
 * `dim_account` — lưu thông tin account/company, được tách riêng để dùng chung cho deal và contact
 
-![Data Warehouse Architecture](assets/erd-datamart.png)
+![Data Warehouse Architecture](assets/erd.png)
 
 ---
 
