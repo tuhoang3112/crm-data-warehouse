@@ -64,12 +64,13 @@ Contact ── linked to Account
 
 ### Data Mart
 
-Data Mart được thiết kế theo mô hình **Snowflake Schema**, bao gồm:
+Data Mart được thiết kế theo **Snowflake Schema**, bao gồm:
 
 * `fact_deal` — mỗi dòng tương ứng với một deal
-* `fact_deal_activity` — mỗi dòng tương ứng với một activity của deal như call, note, change log,...
-* `dim_pipeline`, `dim_stage`, `dim_contact`, `dim_user` — các dimension table chứa thông tin mô tả phục vụ phân tích
-* `dim_account` — lưu thông tin account/company, được tách riêng để dùng chung cho deal và contact
+* `fact_deal_activity` — mỗi dòng tương ứng với một hoạt động của deal như call, note hoặc change log
+* `dim_pipeline`, `dim_stage`, `dim_user` — các bảng dimension chứa thông tin mô tả phục vụ cho việc phân tích
+* `dim_contact` — lưu thông tin của contact/customer và lưu lại lịch sử thay đổi của các thuộc tính như Job Title, Location theo thời gian bằng Slowly Changing Dimension (SCD)
+* `dim_account` — lưu thông tin account/company trong một bảng riêng, được dùng chung cho deal và contact
 
 ![Data Warehouse Architecture](assets/erd.png)
 
@@ -129,14 +130,14 @@ Data Mart sau đó được sử dụng làm data source cho **Power BI** để 
 
 ---
 
-## Skills & Tools
+## Kỹ năng & Công cụ
 
-* **API & Postman:** đọc API documentation, test endpoint, xử lý pagination và parent-child streams
+* **API & Postman:** đọc tài liệu API, test endpoint, pagination, parent-child stream
 * **Airbyte:** Low-code Connector Builder, Incremental Sync
-* **BigQuery & SQL:** `JSON_VALUE`, `UNNEST`, `QUALIFY ROW_NUMBER()`, nested JSON, pivot custom fields
-* **Dataform:** tổ chức transformation theo các layer `declarations → staging → mart`
-* **Data Modeling:** Snowflake Schema, Fact & Dimension tables, ERD
-* **Power BI:** kết nối Data Mart và xây dựng Sales Pipeline reporting
+* **BigQuery & SQL:** `JSON_VALUE`, `UNNEST`, `QUALIFY ROW_NUMBER()`, xử lý nested JSON, pivot custom field
+* **Dataform:** tổ chức và transform dữ liệu theo `declarations → staging → mart`
+* **Data Modeling:** Snowflake Schema, Fact & Dimension, Slowly Changing Dimension (SCD), Surrogate Key, ERD
+* **Power BI:** kết nối Data Mart với báo cáo Sales Pipeline
 
 ---
 
