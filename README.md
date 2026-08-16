@@ -68,7 +68,8 @@ The Data Mart follows a **Snowflake Schema**, including:
 
 * `fact_deal` — one row per deal
 * `fact_deal_activity` — one row per deal activity, such as calls, notes, and change logs
-* `dim_pipeline`, `dim_stage`, `dim_contact`, `dim_user` — dimension tables containing information used for analysis
+* `dim_pipeline`, `dim_stage`, `dim_user` — dimension tables containing descriptive information used for analysis
+* `dim_contact` — stores customer/contact attributes and preserves historical changes using Slowly Changing Dimension (SCD)
 * `dim_account` — stores account/company information in a separate table shared by deals and contacts
 
 ![Data Warehouse Architecture](assets/erd.png)
@@ -135,7 +136,7 @@ The Data Mart was then used as the data source for **Power BI** Sales Pipeline r
 * **Airbyte:** Low-code Connector Builder, Incremental Sync
 * **BigQuery & SQL:** `JSON_VALUE`, `UNNEST`, `QUALIFY ROW_NUMBER()`, nested JSON, custom field pivoting
 * **Dataform:** data transformation organized into `declarations → staging → mart`
-* **Data Modeling:** Snowflake Schema, Fact & Dimension tables, ERD
+* **Data Modeling:** Snowflake Schema, Fact & Dimension tables, Slowly Changing Dimensions (SCD), Surrogate Keys, ERD
 * **Power BI:** Data Mart integration for Sales Pipeline reporting
 
 ---
