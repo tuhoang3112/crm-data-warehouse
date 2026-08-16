@@ -72,22 +72,19 @@ Including historical Pipedrive data reconciliation and reporting validation.
 ## 5. Execution Plan
 
 ```text
-Requirements
-    ↓
-CRM Entity Mapping
-    ↓
-API Exploration & Postman Testing
-    ↓
+Requirements & CRM Mapping
+ ↓
+API Exploration & Testing
+ ↓
 Airbyte Ingestion
-    ↓
+ ↓
 BigQuery Raw Layer
-    ↓
-Dataform Staging
-    ↓
-Historical Data Reconciliation
-    ↓
+ ↓
+Dataform Transformation
++ Historical Reconciliation
+ ↓
 Data Mart
-    ↓
+ ↓
 Power BI
-    ↓
+ ↓
 Validation
