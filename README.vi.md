@@ -150,3 +150,10 @@ Pipeline mới đồng thời giữ lại và xử lý đúng dữ liệu lịch
 Nhờ đó, team Sales có thể tiếp tục sử dụng các báo cáo hiện có mà không bị gián đoạn bởi quá trình CRM migration.
 
 > **Note:** Dự án này được xây dựng dựa trên dữ liệu thực tế của doanh nghiệp. Các thông tin nhạy cảm đã được làm mờ hoặc ẩn, đồng thời các key, thông tin xác thực và dữ liệu bảo mật đã được loại bỏ nhằm đảm bảo tính bảo mật của doanh nghiệp.
+
+![Overview](sales_dashboard/1_overview.png)
+![Winrate](sales_dashboard/2_winrate.png)
+![Saleman](sales_dashboard/3_saleman.png)
+![Deal_activties](sales_dashboard/4_deal_activities.png)
+
+
