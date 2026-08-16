@@ -1,24 +1,62 @@
 config {
-  type: "table",
+  type: "incremental",
+  uniqueKey: ["contact_key"],
   schema: "dm_rework_crm",
-  description: "Dimension: thông tin liên hệ khách hàng"
+  description: "Dimension: thông tin liên hệ khách hàng (SCD2 cho job_title, location)"
 }
 
 SELECT
-  contact_id,
-  account_id,
-  contact_name,
-  email,
-  phone,
-  date_of_birth,
-  facebook,
-  university,
-  location,
-  job_title,
-  customers_course,
-  academic_year,
-  brand_awareness,
-  why_tm,
-  created_at,
-  updated_at
-FROM ${ref("stg_contact")}
+  GENERATE_UUID() AS contact_key,
+  sc.contact_id,
+  sc.account_id,
+  sc.contact_name,
+  sc.email,
+  sc.phone,
+  sc.date_of_birth,
+  sc.facebook,
+  sc.university,
+  sc.location,
+  sc.job_title,
+  sc.created_at,
+  ${when(incremental(),
+    `CASE
+       WHEN EXISTS (SELECT 1 FROM ${self()} d WHERE d.contact_id = sc.contact_id)
+       THEN CURRENT_DATE()
+       ELSE DATE(LEAST(sc.created_at, COALESCE(fd.min_deal_created, sc.created_at)))
+     END AS effective_date,`,
+    `DATE(LEAST(sc.created_at, COALESCE(fd.min_deal_created, sc.created_at))) AS effective_date,`
+  )}
+  CAST(NULL AS DATE) AS end_date,
+  TRUE AS is_current
+FROM ${ref("stg_contact")} sc
+LEFT JOIN (
+  SELECT contact_id, MIN(created_at) AS min_deal_created
+  FROM ${ref("stg_deal")}
+  GROUP BY contact_id
+) fd ON sc.contact_id = fd.contact_id
+
+${when(incremental(),
+  `WHERE NOT EXISTS (
+     SELECT 1 FROM ${self()} d
+     WHERE d.contact_id = sc.contact_id
+       AND d.is_current = TRUE
+       AND COALESCE(d.job_title, '') = COALESCE(sc.job_title, '')
+       AND COALESCE(d.location, '') = COALESCE(sc.location, '')
+   )`
+)}
+
+post_operations {
+  ${when(incremental(),
+    `UPDATE ${self()} AS target
+     SET end_date = CURRENT_DATE(), is_current = FALSE
+     WHERE is_current = TRUE
+       AND contact_key NOT IN (
+         SELECT contact_key FROM ${self()}
+         WHERE effective_date = CURRENT_DATE()
+       )
+       AND contact_id IN (
+         SELECT contact_id FROM ${self()}
+         WHERE effective_date = CURRENT_DATE()
+       )`
+  )}
+}
