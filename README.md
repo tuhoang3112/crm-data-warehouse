@@ -4,154 +4,295 @@
 
 ## Background
 
-The company switched its CRM from **Pipedrive to Rework CRM**. The two systems have different data structures and APIs.
+The company migrated its CRM from **Pipedrive to Rework CRM**.
 
-**Problem:** The existing Data Warehouse was built around Pipedrive's structure, so the data pipeline stopped working after the migration. At the same time, the Sales team still needed to track the pipeline: which stage deals were in, win rates, and common reasons why deals were lost.
+The existing Data Warehouse had been built around Pipedrive's data structure, so the data pipeline could no longer support Sales reporting after the migration.
 
-**Goal:** Rebuild the ingestion pipeline and data model for Rework CRM while keeping the historical data migrated from Pipedrive, so Sales reporting could continue without interruption.
+At the same time, historical Pipedrive data needed to be preserved so key Sales metrics such as **pipeline performance, deal stages, win rate, and lost reasons** could continue to be tracked consistently.
+
+**Goal:** Rebuild the data pipeline and analytical model for Rework CRM while preserving historical Pipedrive data and maintaining reporting continuity.
 
 ---
 
 ## Architecture
 
-```text id="o8hpkh"
+```text
 Rework CRM API
       │
       ▼
-Airbyte (self-hosted)  →  raw ingest, incremental sync
+Airbyte (self-hosted)
+Ingestion + Incremental Sync
       │
       ▼
-BigQuery (raw layer)
+BigQuery
+Raw Data Layer
       │
       ▼
-Dataform (staging)  →  clean data, extract custom fields
+Dataform
+Staging + Transformation
       │
       ▼
-Dataform (mart)  →  Snowflake Schema: fact + dimension
+BigQuery Data Mart
+Fact + Dimension Tables
       │
       ▼
 Power BI
+Sales Management & Monitoring
 ```
-
-| Layer | Tool | Implementation |
-|---|---|---|
-| Data Ingestion | Airbyte | [`View Connector`](./airbyte-custom-connector/) |
-| Data Warehouse | BigQuery | [`View Raw Layer`](./assets/bigquery-raw-layer.png) |
-| Transformation & Modeling | Dataform | [`View Models`](./dataform/) |
-| Analytics | Power BI | [`View Dashboard`](./sales_dashboard/) |
-
-### CRM Data Structure
-
-Before building the Data Mart, the main CRM entities were mapped at a conceptual level to understand how a deal connects with other parts of the sales process.
-
-```
-Contact ── linked to Account
-   │
-   ▼
- Deal
-   │
-   ├── belongs to Pipeline
-   │        └── Stage
-   │
-   ├── owned by User
-   │
-   │
-   └── has Activities
-             ├── Call
-             ├── Note
-             └── Change Log
-```
-
-### Data Mart
-
-The Data Mart follows a **Snowflake Schema**, including:
-
-* `fact_deal` — one row per deal
-* `fact_deal_activity` — one row per deal activity, such as calls, notes, and change logs
-* `dim_pipeline`, `dim_stage`, `dim_user` — dimension tables containing descriptive information used for analysis
-* `dim_contact` — stores customer/contact attributes and preserves historical changes using Slowly Changing Dimension (SCD)
-* `dim_account` — stores account/company information in a separate table shared by deals and contacts
-
-![Data Warehouse Architecture](assets/erd.png)
 
 ---
 
-## Implementation
+## Data Model
 
-### 1. Exploring and Testing the API
+The Data Mart follows a **Snowflake Schema** designed around Deals and Deal Activities, with supporting dimensions for Contacts, Accounts, Pipelines, Stages, and Users.
 
-Reviewed the main Rework CRM API endpoints, including **Pipeline, Deal, Account, and Contact**, based on the API documentation.
+![CRM Data Mart](assets/erd.png)
 
-Each endpoint was then tested in **Postman** to check the actual response, data structure, pagination, and relationships between endpoints before building the ingestion pipeline.
+### Main Tables
 
-### 2. Pulling Data with Airbyte
+- `fact_deal` — one row per deal
+- `fact_deal_activity` — one row per deal activity
+- `dim_contact` — Contact dimension with SCD Type 2 for selected attributes
+- `dim_account` — Account/company information
+- `dim_pipeline` — Sales pipeline information
+- `dim_stage` — Sales stage information
+- `dim_user` — Sales owner/user information
 
-Used **Airbyte self-hosted** and its Low-code Connector Builder to pull data from the Rework CRM API into BigQuery.
+---
 
-A few things needed extra handling:
+# Implementation
 
-* The API sends credentials through the **request body** instead of the header.
-* Pagination using `page/limit` had to be configured manually.
-* Activities cannot be pulled in bulk, so a **parent-child stream** was used: pull all deals first, then pull the activities for each deal.
-* **Incremental Sync** was used so each run only pulls new or updated data instead of reloading all ~**25,000 deals and 25,000 contacts**.
+## 1. Understanding the Data & Migration
 
-### 3. Cleaning Data with Dataform
+Before rebuilding the pipeline, the main CRM entities and historical data were reviewed to understand how the new Rework structure differed from Pipedrive.
 
-After the raw data was loaded into BigQuery, **Dataform** was used to build the staging layer and clean the data before loading it into the Data Mart.
+Historical Pipedrive records had previously been exported, field-mapped, and imported into Rework CRM.
 
-The main steps included:
+Not every field could be mapped directly. Some original Pipedrive values were stored in Rework custom fields, while some standard Rework fields represented the migration event rather than the original business event.
 
-* Parsing nested JSON fields such as `address`, `form`, and `owners`.
-* Handling **custom fields** stored by Rework as dynamic JSON arrays: `UNNEST` the data first, then pivot it back into columns using `MAX(IF(...))`.
-* Decoding values stored as HTML or Base64 with unusual prefixes.
-* Removing duplicates with `QUALIFY ROW_NUMBER()`, keeping one complete original record instead of combining values from different rows.
+Understanding these differences was important before deciding which fields should be used in the analytical layer.
 
-### 4. Handling Historical Data from Pipedrive
+→ [View Project Requirements](./docs/project-requirements.md)
 
-This was the most challenging part of the migration.
+---
 
-Because the old data was imported from Pipedrive, some fields in Rework could not be used directly.
+## 2. Exploring & Testing the API
 
-For example, `created_at` in Rework shows **when the record was imported**, not when the deal or contact was originally created. The actual creation date had to be taken from a custom field that stores the original Pipedrive value.
+The main Rework CRM API endpoints were reviewed using the [Rework CRM API Documentation](https://rework-standard.apidocs.rework.site/home) and tested in **Postman** before building the ingestion pipeline.
 
-Some custom fields also had no readable names and appeared only as random strings. These fields had to be manually checked in the Rework UI to understand what data they represented.
+The testing focused on:
 
-After identifying the correct fields, `COALESCE` was used to take the original Pipedrive value when available and use the Rework value otherwise.
+- Authentication
+- Response structure
+- Pagination
+- Nested data
+- Relationships between endpoints
 
-This kept historical dates accurate instead of treating the CRM migration date as the actual event date.
+The main entities included **Deal, Contact, Account, Pipeline, Stage, and Deal Activity**.
 
-### 5. Building the Data Mart
+This step helped determine how each entity should be extracted and how the streams needed to relate to each other in Airbyte.
 
-The cleaned staging data was used to build a **Snowflake Schema** with fact and dimension tables for analysis.
+---
 
-Account information appeared in both deals and contacts, so it was separated into `dim_account` to reduce duplicated data and keep the data model cleaner.
+## 3. Building the Ingestion Pipeline
 
-The Data Mart was then used as the data source for **Power BI** Sales Pipeline reporting.
+I used **Airbyte self-hosted** and its Low-code Connector Builder to ingest Rework CRM data into BigQuery.
+
+Several parts required custom configuration.
+
+### Authentication
+
+The API sends credentials through the **request body** instead of the request header.
+
+### Pagination
+
+The API uses `page / limit` pagination, which had to be configured manually in the connector.
+
+### Parent-Child Streams
+
+Deal activities cannot be retrieved through a single bulk endpoint.
+
+The pipeline therefore retrieves deals first and then requests activities for each deal:
+
+```text
+Deals → Deal IDs → Activities for each Deal
+```
+
+### Incremental Sync
+
+The main CRM entities contain approximately **25,000 deals and 25,000 contacts**.
+
+Incremental Sync was configured so each run retrieves only new or updated records instead of reloading the entire dataset.
+
+→ [View Airbyte Connector](./airbyte-custom-connector/)
+
+---
+
+## 4. Loading Raw Data into BigQuery
+
+Airbyte loads the extracted CRM data into a **BigQuery raw layer** before business transformations are applied.
+
+The raw layer preserves the source structure, including nested JSON, dynamic custom fields, and multiple extracted versions of CRM records.
+
+Keeping the raw layer separate also makes it easier to trace transformed values back to the source when investigating data issues.
+
+![BigQuery Raw Layer](assets/bigquery-raw-layer.png)
+
+---
+
+## 5. Cleaning & Transforming the Data
+
+After the raw data was loaded into BigQuery, **Dataform** was used to build the staging layer and transform the CRM data into analytics-ready tables.
+
+The Dataform project is organized into:
+
+`declarations → staging → marts`
+
+### Custom & Nested Fields
+
+Rework stores many custom fields inside dynamic JSON arrays.
+
+These fields are extracted with `UNNEST` and pivoted into analytical columns using `MAX(IF(...))`.
+
+```text
+JSON Array → UNNEST → Key / Value → Pivot → Analytical Columns
+```
+
+Other transformations include:
+
+- Parsing nested JSON fields
+- Decoding HTML and Base64 values
+- Standardizing CRM statuses
+- Mapping lost-reason identifiers to readable categories
+- Removing duplicate source versions with `QUALIFY ROW_NUMBER()`
+
+### Historical Pipedrive Data
+
+Migrated records required additional handling because some Rework fields no longer represented the original business event.
+
+For example, `created_at` in Rework could represent **when a historical deal was imported**, rather than when the deal was originally created in Pipedrive.
+
+The transformation therefore prioritizes the original Pipedrive value when available:
+
+```sql
+COALESCE(
+    pipedrive_created_at,
+    rework_created_at
+)
+```
+
+Similar fallback logic is applied to other historical fields where necessary, including deal close dates and migrated lost-reason information.
+
+This prevents the CRM migration itself from distorting historical Sales reporting.
+
+→ [View Dataform Models](./dataform/)
+
+---
+
+## 6. Building the Data Mart
+
+The cleaned staging data is transformed into fact and dimension tables for analysis.
+
+The model follows a **Snowflake Schema** centered around Deals and Deal Activities.
+
+One modeling challenge involved Contact attributes such as **job title and location**, which can change over time.
+
+`dim_contact` therefore uses **Slowly Changing Dimension Type 2 (SCD2)** to preserve historical versions of these attributes.
+
+This allows a historical deal to remain associated with the Contact information that was valid when the deal was created, rather than always using the Contact's current information.
+
+→ [View Data Dictionary](./docs/data-dictionary.md)
+
+---
+
+## 7. Reporting with Power BI
+
+The Data Mart is used as the source for the Sales Pipeline dashboard in **Power BI**.
+
+Sales representatives primarily use Rework CRM to manage individual deals, while Power BI provides **Sales Manager and Sales Admin with a management-level view of the team**.
+
+The reporting layer supports monitoring of:
+
+- Sales pipeline performance
+- Deal stages
+- Win / loss performance
+- Lost reasons
+- Sales activities
+- Team performance
+- Warning signals requiring attention
+
+→ [View Dashboard](./sales_dashboard/)
+
+---
+
+## Testing & Validation
+
+The rebuilt dashboard was validated from two directions:
+
+```mermaid
+flowchart LR
+    A[Previous Power BI Dashboard] -->|Reporting continuity| C[New Power BI Dashboard]
+    B[Rework CRM] -->|Current data cross-check| C
+```
+
+### Previous Dashboard Reconciliation
+
+Equivalent reporting periods and filters were applied to the previous and rebuilt dashboards.
+
+Key metrics such as **deal count, deal stage, won/lost deals, win rate, lost reasons, and team performance** were compared to check reporting continuity after the CRM migration.
+
+### Rework CRM Cross-check
+
+For current data, equivalent filters were applied directly in Rework CRM and Power BI.
+
+This was used to verify that dashboard results reflected the operational CRM correctly.
+
+Migrated records were also checked separately where Rework timestamps could represent the migration date instead of the original business date.
+
+→ [View Testing & Validation](./docs/testing-validation.md)
 
 ---
 
 ## Skills & Tools
 
-* **API & Postman:** API documentation, endpoint testing, pagination, parent-child streams
-* **Airbyte:** Low-code Connector Builder, Incremental Sync
-* **BigQuery & SQL:** `JSON_VALUE`, `UNNEST`, `QUALIFY ROW_NUMBER()`, nested JSON, custom field pivoting
-* **Dataform:** data transformation organized into `declarations → staging → mart`
-* **Data Modeling:** Snowflake Schema, Fact & Dimension tables, Slowly Changing Dimensions (SCD), Surrogate Keys, ERD
-* **Power BI:** Data Mart integration for Sales Pipeline reporting
+| Area | Skills & Tools |
+|---|---|
+| **API** | REST API, Postman, pagination, parent-child streams |
+| **Data Ingestion** | Airbyte, Low-code Connector Builder, Incremental Sync |
+| **Data Warehouse** | BigQuery |
+| **SQL** | `JSON_VALUE`, `UNNEST`, `QUALIFY ROW_NUMBER()`, window functions |
+| **Transformation** | Dataform, staging & mart layers |
+| **Data Modeling** | Snowflake Schema, Fact & Dimension tables, SCD Type 2 |
+| **BI** | Power BI, Sales Pipeline reporting |
 
 ---
 
 ## Results
 
-Successfully connected **Rework CRM** to the Data Warehouse and restored the data flow for the existing Power BI reports after the CRM migration.
+The rebuilt pipeline restored the data flow from **Rework CRM to the Data Warehouse and Power BI** after the CRM migration.
 
-The new pipeline also kept the historical Pipedrive data accurate, so key Sales Pipeline metrics such as **deal stage, win rate, and lost reasons** could continue to be tracked consistently.
+Historical Pipedrive data was preserved so migration-specific timestamps and field differences did not distort historical reporting.
 
-As a result, the Sales team could continue using their reports without interruption after switching to the new CRM.
+As a result, **Sales Manager and Sales Admin can continue monitoring team-level Sales performance, pipeline health, and warning signals through Power BI**, while Sales representatives continue using Rework CRM for day-to-day operations.
+
+---
+
+## Repository Structure
+
+```text
+crm-data-warehouse/
+│
+├── docs/
+│   ├── project-requirements.md   # Requirements, scope & execution plan
+│   ├── data-dictionary.md        # Data model & field definitions
+│   └── testing-validation.md     # Reporting validation
+│
+├── airbyte-custom-connector/     # Rework CRM API ingestion
+├── dataform/                     # Transformation & Data Mart
+├── sales_dashboard/              # Power BI reporting
+└── assets/                       # ERD & screenshots
+```
+
+---
 
 > **Note:** This project was built using real company data. To protect confidentiality, sensitive information shown in dashboards has been blurred or redacted, while confidential values, keys, and credentials have been removed from the code and files shared in this repository.
-
-![Overview](sales_dashboard/1_overview.png)
-![Winrate](sales_dashboard/2_winrate.png)
-![Saleman](sales_dashboard/3_saleman.png)
-![Deal_activties](sales_dashboard/4_deal_activities.png)
