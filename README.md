@@ -302,7 +302,3 @@ crm-data-warehouse/
 ├── sales_dashboard/              # Power BI reporting
 └── assets/                       # ERD & screenshots
 ```
-
----
-
-> **Note:** This project was built using real company data. To protect confidentiality, sensitive information shown in dashboards has been blurred or redacted, while confidential values, keys, and credentials have been removed from the code and files shared in this repository.
