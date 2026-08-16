@@ -275,6 +275,16 @@ Historical Pipedrive data was preserved so migration-specific timestamps and fie
 
 As a result, **Sales Manager and Sales Admin can continue monitoring team-level Sales performance, pipeline health, and warning signals through Power BI**, while Sales representatives continue using Rework CRM for day-to-day operations.
 
+![Overview](sales_dashboard/1_overview.png)
+
+![Win Rate](sales_dashboard/2_winrate.png)
+
+![Sales Performance](sales_dashboard/3_saleman.png)
+
+![Deal Activities](sales_dashboard/4_deal_activities.png)
+
+> **Note:** Dự án này được xây dựng dựa trên dữ liệu thực tế của doanh nghiệp. Để đảm bảo tính bảo mật, các thông tin nhạy cảm trên dashboard đã được làm mờ hoặc ẩn; các key, credentials và giá trị bảo mật cũng đã được loại bỏ khỏi code và các file được chia sẻ trong repository.
+
 ---
 
 ## Repository Structure
