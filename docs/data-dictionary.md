@@ -2,7 +2,7 @@
 
 ## Data Model
 
-![CRM Data Mart](assets/erd.png)
+![CRM Data Mart](../assets/erd.png)
 
 ---
 
