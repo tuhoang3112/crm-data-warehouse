@@ -1,0 +1,288 @@
+<title>EDA dm_rework_crm — Phần 1-3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F1; --surface:#FFFFFF; --surface-2:#EAEBE4; --border:#D7DACF;
+    --ink:#1B241F; --ink-muted:#5B6860; --ink-faint:#8B968D;
+    --accent:#2A78D6; --accent-soft:#DCE7F4; --accent-ink:#154373;
+    --good:#0CA30C; --good-soft:#DFF3DE;
+    --warn:#B9800D; --warn-soft:#F6E9CC;
+    --bad:#D03B3B; --bad-soft:#F8DEDD;
+    --shadow:0 1px 2px rgba(27,36,32,.06),0 6px 18px rgba(27,36,32,.06);
+    --font-display:'Be Vietnam Pro',"Segoe UI",system-ui,sans-serif;
+    --font-body:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); font-size:16px; line-height:1.55;
+  }
+  h1,h2,h3,h4,.font-display{ font-family:var(--font-display); text-wrap:balance; }
+  .mono{ font-family:var(--font-mono); }
+  a{ color:var(--accent); }
+
+  main{ max-width:1000px; margin:0 auto; padding:2.2rem 1.5rem 4rem; }
+
+  .doc-head{ padding-bottom:1.6rem; border-bottom:2px solid var(--ink); margin-bottom:2.2rem; }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:.78rem; letter-spacing:.06em;
+    color:var(--ink-muted); text-transform:uppercase; margin:0 0 .6rem;
+  }
+  .doc-head h1{ font-size:1.9rem; font-weight:800; margin:0 0 .6rem; line-height:1.2; }
+  .doc-head .meta{ font-size:.92rem; color:var(--ink-muted); margin:0; }
+  .doc-head .meta b{ color:var(--ink); }
+
+  section{ padding:2rem 0; border-bottom:1px solid var(--border); }
+  section:last-of-type{ border-bottom:none; }
+  .section-head{ margin-bottom:1.6rem; }
+  .section-head .kicker{
+    font-family:var(--font-mono); font-size:.76rem; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--accent); margin:0 0 .3rem;
+  }
+  .section-head h2{ font-size:1.4rem; margin:0 0 .35rem; }
+  .section-head p{ color:var(--ink-muted); margin:0; max-width:70ch; }
+
+  details.table-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:1rem 1.3rem; margin-bottom:.7rem; box-shadow:var(--shadow);
+  }
+  details.table-card summary{
+    cursor:pointer; font-family:var(--font-display); font-weight:700; font-size:1rem;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem; list-style:none;
+  }
+  details.table-card summary::-webkit-details-marker{ display:none; }
+  details.table-card summary .meta{ font-family:var(--font-mono); font-size:.76rem; color:var(--ink-muted); font-weight:500; }
+  details.table-card .grain{ font-size:.85rem; color:var(--ink-muted); margin:.8rem 0 .9rem; }
+  details.table-card .grain b{ color:var(--ink); }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+  table.stat-table{ border-collapse:collapse; width:100%; font-size:.78rem; min-width:700px; }
+  table.stat-table th, table.stat-table td{
+    padding:.4rem .6rem; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap;
+  }
+  table.stat-table td:last-child{ white-space:normal; min-width:260px; color:var(--ink-muted); }
+  table.stat-table th{
+    font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--ink-muted); background:var(--surface-2);
+  }
+  table.stat-table td:nth-child(3), table.stat-table td:nth-child(4){ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  table.stat-table tr.redacted td:last-child{ font-style:italic; color:var(--ink-faint); }
+  table.stat-table tr.flag td{ background:var(--bad-soft); }
+  table.stat-table code{ font-family:var(--font-mono); background:var(--surface-2); padding:.1rem .3rem; border-radius:4px; font-size:.76rem; }
+
+  .rel-list{ display:flex; flex-direction:column; gap:.6rem; }
+  .rel{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:.9rem 1.1rem; display:grid; grid-template-columns:1fr auto; gap:.35rem 1rem; box-shadow:var(--shadow);
+  }
+  .rel.flag{ border-color:var(--bad); }
+  .rel .rel-name{ font-family:var(--font-mono); font-size:.85rem; font-weight:600; }
+  .rel .rel-pct{ font-family:var(--font-mono); font-size:1.05rem; font-weight:600; text-align:right; }
+  .rel.flag .rel-pct{ color:var(--bad); }
+  .rel .rel-desc{ grid-column:1/-1; font-size:.84rem; color:var(--ink-muted); margin:0; }
+
+  .scd-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.9rem; margin-bottom:1.1rem; }
+  .scd-tile{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.1rem; box-shadow:var(--shadow); }
+  .scd-tile .v{ font-family:var(--font-mono); font-size:1.6rem; font-weight:600; color:var(--good); }
+  .scd-tile .l{ font-size:.82rem; color:var(--ink-muted); margin-top:.2rem; }
+  .callout{
+    background:var(--warn-soft); border:1px solid var(--warn); border-radius:10px;
+    padding:.9rem 1.1rem; font-size:.9rem; color:var(--ink);
+  }
+  .callout b{ color:var(--warn); }
+
+  footer{ padding:1.6rem 0 1rem; color:var(--ink-faint); font-size:.8rem; }
+  footer .sec{ margin-bottom:.25rem; }
+
+  @media print{
+    body{ font-size:13px; }
+    section{ break-inside:avoid-page; }
+    details.table-card, .rel{ break-inside:avoid; }
+    details.table-card:not([open]) > *:not(summary){ display:block !important; }
+    a[href]{ color:inherit; text-decoration:none; }
+  }
+</style>
+
+<main>
+  <div class="doc-head">
+    <p class="eyebrow">EDA Report — Phần 1–3</p>
+    <h1>Rà soát dữ liệu — dm_rework_crm</h1>
+    <p class="meta"><b>Nguồn:</b> BigQuery <span class="mono">tm-database-486412.dm_rework_crm</span> · <b>Ngày chạy:</b> 2026-08-19 · <b>Phạm vi:</b> toàn bộ dữ liệu, không lọc theo ngày. Chỉ ẩn giá trị thật của cột email/phone.</p>
+  </div>
+
+  <section id="chi-tiet-bang">
+    <div class="section-head">
+      <p class="kicker">Phần 1</p>
+      <h2>Chi tiết từng bảng</h2>
+      <p>Grain, số dòng, cột + kiểu dữ liệu, null%/min/max/top-5 cho cả 7 bảng.</p>
+    </div>
+    <div id="table-details"></div>
+  </section>
+
+  <section id="quan-he">
+    <div class="section-head">
+      <p class="kicker">Phần 2</p>
+      <h2>Quan hệ khóa ngoại (FK → PK)</h2>
+      <p>7 quan hệ theo ERD đã biết, verify từng cái — không suy đoán quan hệ khác.</p>
+    </div>
+    <div class="rel-list" id="rel-list"></div>
+  </section>
+
+  <section id="scd2">
+    <div class="section-head">
+      <p class="kicker">Phần 3</p>
+      <h2>SCD Type 2 — dim_contact</h2>
+    </div>
+    <div class="scd-grid">
+      <div class="scd-tile"><span class="v">0</span><span class="l">contact_id vi phạm quy tắc "đúng 1 dòng is_current=true"</span></div>
+      <div class="scd-tile"><span class="v">0</span><span class="l">contact_id có nhiều hơn 1 version (trên tổng 26.675)</span></div>
+      <div class="scd-tile"><span class="v">0</span><span class="l">cặp version bị overlap effective_date/end_date</span></div>
+    </div>
+    <div class="callout"><b>Lưu ý:</b> cả 3 số "0" trên là vì <b>chưa có contact nào từng phát sinh version thứ 2</b> — <code class="mono">end_date</code> 100% NULL, <code class="mono">is_current</code> luôn <code class="mono">True</code>. Cơ chế SCD2 đúng ở tầng schema nhưng chưa từng được kiểm chứng với dữ liệu có version chồng lấn thật. Cần chạy lại 2 kiểm tra này khi pipeline bắt đầu tạo version mới cho contact.</div>
+  </section>
+
+  <footer>
+    <div class="sec"><b>Nguồn:</b> BigQuery <span class="mono">tm-database-486412.dm_rework_crm</span> (dim_account, dim_contact, dim_pipeline, dim_stage, dim_user, fact_deal, fact_deal_activity)</div>
+    <div class="sec"><b>Ngày chạy:</b> 2026-08-19 · không lọc theo ngày tạo</div>
+    <div class="sec"><b>Bảo mật:</b> chỉ email và phone không hiển thị giá trị thật (chỉ báo cardinality/null%). Các cột khác — account_name, contact_name, deal_name, tên/job_title trong dim_user — hiển thị bình thường.</div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const relDefs = [
+    {name:'1. fact_deal.contact_key → dim_contact.contact_key', pct:'100,00%', flag:false,
+     desc:'FK non-null: 25.081 · Matched: 25.081 · Orphan: 0. Kiểm tra format UUID: 0/25.081 sai định dạng → không có deal nào dùng contact_id thay contact_key.'},
+    {name:'2. fact_deal.stage_id → dim_stage.stage_id', pct:'100,00%', flag:false,
+     desc:'FK non-null: 25.576 · Matched: 25.576 · Orphan: 0.'},
+    {name:'3. fact_deal.owner_user_id → dim_user.user_id', pct:'97,24%', flag:false,
+     desc:'FK non-null: 25.576 · Matched: 24.869 · Orphan: 707 (2,76%), 4 giá trị orphan riêng biệt: 3720, 3966, 3721, 4297 — user đã bị xoá/deactivate khỏi dim_user.'},
+    {name:'4. fact_deal_activity.deal_id → fact_deal.deal_id', pct:'100,00%', flag:false,
+     desc:'FK non-null: 54.404 · Matched: 54.404 · Orphan: 0.'},
+    {name:'5. fact_deal_activity.activity_owner_user_id → dim_user.user_id', pct:'94,77%', flag:false,
+     desc:'FK non-null: 54.404 · Matched: 51.556 · Orphan: 2.848 (5,23%), 9 giá trị riêng biệt — trùng phần lớn nhóm orphan #3, cộng thêm giá trị 0 (nghi sentinel "hệ thống").'},
+    {name:'6. dim_contact.account_id → dim_account.account_id', pct:'0,03%', flag:true,
+     desc:'FK non-null: 26.675 · Matched: 8 · Orphan: 26.667 (99,97%), 517 giá trị riêng biệt. dim_account chỉ có 30 dòng — quan hệ vỡ nghiêm trọng nhất dataset, cần điều tra nguồn ID.'},
+    {name:'7. dim_stage.pipeline_id → dim_pipeline.pipeline_id', pct:'100,00%', flag:false,
+     desc:'FK non-null: 24 · Matched: 24 · Orphan: 0.'}
+  ];
+  const relList = document.getElementById('rel-list');
+  relDefs.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'rel' + (r.flag ? ' flag' : '');
+    div.innerHTML = '<div class="rel-name">'+r.name+'</div><div class="rel-pct">'+r.pct+'</div><p class="rel-desc">'+r.desc+'</p>';
+    relList.appendChild(div);
+  });
+
+  const tables = [
+    {name:'dim_account', rows:'30', grain:'1 dòng / <code class="mono">account_id</code> (distinct 30 = tổng 30, khớp)', cols:[
+      ['account_id','NUMERIC','0,0%','30','16.802 / 23.657 / 20.723,33'],
+      ['account_name','STRING','0,0%','29','CÔNG TY TNHH SẢN XUẤT VÀ THƯƠNG MẠI AN HẢI VN: 2; CHI NHÁNH CTY TNHH TM XNK YUGOC: 1; Công ty TNHH Tốt và Xanh: 1; CÔNG TY TNHH SƠN BA: 1; CÔNG TY CP AMORIS VIỆT NAM: 1'],
+      ['account_address','STRING','100,0%','0','NULL: 30',false,true],
+      ['account_description','STRING','0,0%','1','(rỗng): 30',false,true],
+      ['brand_name','STRING','0,0%','1','(rỗng): 30',false,true],
+      ['industry','STRING','0,0%','6','(rỗng): 25; bán buôn thực phẩm: 1; ...'],
+      ['website','STRING','0,0%','1','(rỗng): 30',false,true],
+      ['linkedin_profile','STRING','0,0%','1','(rỗng): 30',false,true],
+      ['company_size','STRING','0,0%','5','unknown: 14; 11-50: 10; 51-200: 4; 1-10: 1; 201-500: 1'],
+      ['created_at','DATETIME','0,0%','30','min 2026-06-09 · max 2026-08-05'],
+      ['updated_at','DATETIME','0,0%','30','min 2026-06-09 · max 2026-08-05'],
+    ]},
+    {name:'dim_contact', rows:'26.675', grain:'1 dòng / <code class="mono">contact_key</code> (SCD2 — distinct contact_key = distinct contact_id = 26.675, mỗi contact hiện chỉ có 1 version)', cols:[
+      ['contact_key','STRING','0,0%','26.675','UUID, tất cả unique'],
+      ['contact_id','NUMERIC','0,0%','26.675','min 1.766 / max 111.622 / mean 19.979,31'],
+      ['account_id','NUMERIC','0,0%','525','min 0 / max 22.828 / mean 101,48'],
+      ['contact_name','STRING','0,0%','21.344','Nguyễn Phương Anh: 44; Nguyễn Phương Thảo: 32; Nguyễn Khánh Linh: 30; Nguyễn Mai Anh: 24; Nguyễn Thị Phương Thảo: 23'],
+      ['email','STRING','0,0%','26.674','[ẩn — cột nhạy cảm]',true],
+      ['phone','STRING','0,0%','25.860','[ẩn — cột nhạy cảm]',true],
+      ['date_of_birth','STRING','0,0%','394','(rỗng): 7.039; 2003: 2.216; 2002: 1.919; ...'],
+      ['facebook','STRING','10,3%','6.032','(rỗng): 17.869; NULL: 2.749; ...'],
+      ['university','STRING','0,0%','1','(rỗng): 26.675',false,true],
+      ['location','STRING','0,0%','50','(rỗng): 11.717; Sài Gòn: 7.641; Hà Nội: 5.586; ...'],
+      ['job_title','STRING','0,0%','23','(rỗng): 25.695; Executive/Assistant Manager: 314; ...'],
+      ['created_at','DATETIME','0,0%','20.735','min 2020-12-31 · max 2026-08-08'],
+      ['effective_date','DATE','0,0%','2.035','min 2020-12-31 · max 2026-08-08'],
+      ['end_date','DATE','100,0%','0','NULL: 26.675',false,true],
+      ['is_current','BOOLEAN','0,0%','1','True: 26.675',false,true],
+    ]},
+    {name:'dim_pipeline', rows:'4', grain:'1 dòng / <code class="mono">pipeline_id</code>', cols:[
+      ['pipeline_id','NUMERIC','0,0%','4','min 2.037 / max 2.754'],
+      ['pipeline_name','STRING','0,0%','4','Nurturing Pipeline; CS | Retention Pipeline; B2B pipeline; Sales | Prospecting Pipeline'],
+      ['pipeline_content','STRING','0,0%','2','(rỗng): 3; (mô tả dài): 1'],
+    ]},
+    {name:'dim_stage', rows:'24', grain:'1 dòng / <code class="mono">stage_id</code>', cols:[
+      ['stage_id','NUMERIC','0,0%','24','min 72 / max 229'],
+      ['pipeline_id','NUMERIC','0,0%','4','min 2.037 / max 2.754'],
+      ['stage_name','STRING','0,0%','18','Ready To Purchase: 3; Needs Exploration: 2; Engaged: 2; ...'],
+    ]},
+    {name:'dim_user', rows:'29', grain:'1 dòng / <code class="mono">user_id</code>', cols:[
+      ['user_id','INTEGER','0,0%','29','min 2.966 / max 5.414'],
+      ['username','STRING','0,0%','29','29 giá trị đều unique'],
+      ['full_name','STRING','0,0%','29','29 giá trị đều unique'],
+      ['job_title','STRING','3,4%','15','Marketing: 10; Customer Service: 3; Sales Consultant: 3; ...'],
+      ['email','STRING','0,0%','29','[ẩn — cột nhạy cảm]',true],
+    ]},
+    {name:'fact_deal', rows:'25.576', grain:'1 dòng / <code class="mono">deal_id</code>', cols:[
+      ['deal_id','NUMERIC','0,0%','25.576','min 1.491 / max 135.997 / mean 22.130,73'],
+      ['contact_key','STRING','1,9%','20.727','NULL: 495; (UUID, rải rác)'],
+      ['stage_id','NUMERIC','0,0%','17','min 72 / max 226'],
+      ['owner_user_id','NUMERIC','0,0%','17','min 2.969 / max 5.227'],
+      ['deal_name','STRING','0,0%','25.452','Bùi Kiến Quốc - -- Marketing Course --: 10; Đặng Thị Kim Thoa - Digital Foundation ONL: 7; Nguyễn Linh Chi - Data Viz & Analytics with Excel: 7; LÊ ĐẶNG THANH THẢO - Marketing Foundation - OFF SG: 7; Phạm Mai - Advanced Data Analytics with Python: 7'],
+      ['deal_status','STRING','0,0%','3','won: 14.268; lost: 10.452; open: 856'],
+      ['labels','STRING','99,6%','1','NULL: 25.463; "lead cks": 113',false,true],
+      ['is_alumni','STRING','86,3%','2','NULL: 22.076; Không phải Cựu học viên: 3.033; Cựu học viên: 467'],
+      ['group_registration','STRING','93,1%','1.573','NULL: 23.804; rải rác'],
+      ['course_selected','STRING','0,7%','43','Marketing Foundation: 6.353; Case Mastery: 3.045; ...'],
+      ['learning_format','STRING','58,2%','5','NULL: 14.879; Online (Zoom): 7.232; Offline SG: 2.200; Offline HN: 1.261'],
+      ['class_code','STRING','10,4%','1.834','NULL: 2.670; Case09: 123; FO14: 110; ...'],
+      ['expectation','STRING','41,2%','14.416','NULL: 10.539; na: 336; NA: 85; ...'],
+      ['promotion_code','STRING','85,2%','8','NULL: 21.796; Black Friday: 1.006; Lunar New Year: 864; ... (trùng casing "lunar new year")',false,true],
+      ['gift','STRING','99,0%','21','NULL: 25.316; IR: 128; IR và Trade: 31; IR + Trade: 21; IR + TRADE: 17 (trùng casing)',false,true],
+      ['need_consulting','STRING','88,7%','2','NULL: 22.687; Có: 2.400; Không: 489'],
+      ['preferred_consulting_time','STRING','61,4%','4','NULL: 15.695; 17:00-18:00: 3.684; 14:00-17:00: 3.104; ...'],
+      ['pain_point_captured','STRING','97,6%','2','NULL: 24.973; Có: 391; Không: 212'],
+      ['pending_reason','STRING','98,4%','19','NULL: 25.155; Chưa liên hệ được: 115; ...'],
+      ['pending_reason_detail','STRING','98,8%','302','NULL: 25.272; rải rác'],
+      ['has_followup_plan','STRING','98,2%','2','NULL: 25.105; Có: 399; Không: 72'],
+      ['next_step','STRING','99,7%','64','NULL: 25.495; Mark lost: 7; ...'],
+      ['lost_reason','STRING','92,4%','17','NULL: 23.633; Not Connected: 314; Low engagement: 235; ...'],
+      ['lost_reason_detail','STRING','0,0%','706','(rỗng): 16.403; rải rác'],
+      ['utm_source','STRING','43,3%','125','NULL: 11.074; facebook: 9.736; homepage: 1.254; ... (trùng casing "Facebook")',false,true],
+      ['utm_medium','STRING','49,4%','143','NULL: 12.634; inbox: 4.278; cpc: 3.160; ...'],
+      ['utm_content','STRING','58,5%','1.905','NULL: 14.953; fanpage: 1.559; personal: 1.042; ...'],
+      ['utm_product','STRING','92,3%','61','NULL: 23.600; marketing_foundation: 349; case_mastery: 289; ...'],
+      ['utm_person','STRING','82,9%','44','NULL: 21.215; thuhang: 765; dieulinh: 753; ...'],
+      ['created_at','DATETIME','0,0%','25.266','min 2021-01-01 · max 2026-08-14'],
+      ['updated_at','DATETIME','0,0%','10.567','min 2025-11-27 · max 2026-08-14'],
+      ['closed_at','DATETIME','3,4%','21.804','NULL: 857; min 2021-01-03 · max 2026-08-14'],
+    ]},
+    {name:'fact_deal_activity', rows:'54.404', grain:'1 dòng / <code class="mono">activity_id</code>', cols:[
+      ['activity_id','INTEGER','0,0%','54.404','min 19.533 / max 993.033'],
+      ['deal_id','INTEGER','0,0%','12.674','min 1.491 / max 135.997'],
+      ['activity_type','STRING','0,0%','4','Ghi chú: 30.580; Thay đổi hệ thống: 20.991; Nhật ký hoạt động: 2.817; File: 16'],
+      ['activity_content','STRING','4,1%','44.271','NULL: 2.226; mô tả stage tự động, dài'],
+      ['activity_owner_user_id','INTEGER','0,0%','27','min 0 / max 5.414'],
+      ['created_at','DATETIME','0,0%','42.081','min 2025-10-24 · max 2026-08-14'],
+      ['updated_at','DATETIME','0,0%','42.083','min 2025-10-24 · max 2026-08-14'],
+    ]},
+  ];
+
+  const tableWrap = document.getElementById('table-details');
+  tables.forEach(t=>{
+    const det = document.createElement('details');
+    det.className = 'table-card';
+    det.open = true;
+    const rowsHtml = t.cols.map(c=>{
+      const [name,type,nullpct,distinct,note,redacted,flag] = c;
+      return '<tr class="'+(redacted?'redacted ':'')+(flag?'flag':'')+'"><td><code>'+name+'</code></td><td>'+type+'</td><td>'+nullpct+'</td><td>'+distinct+'</td><td>'+note+'</td></tr>';
+    }).join('');
+    det.innerHTML =
+      '<summary>'+t.name+' <span class="meta">'+t.rows+' dòng · '+t.cols.length+' cột</span></summary>'+
+      '<p class="grain"><b>Grain:</b> '+t.grain+'</p>'+
+      '<div class="table-wrap"><table class="stat-table"><thead><tr><th>Cột</th><th>Kiểu</th><th>Null %</th><th>Distinct</th><th>Min/Max/Mean hoặc Top-5</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>';
+    tableWrap.appendChild(det);
+  });
+})();
+</script>
