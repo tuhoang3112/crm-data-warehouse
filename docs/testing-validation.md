@@ -10,16 +10,17 @@ flowchart LR
     B[Rework CRM] -->|Current data cross-check| C
 ```
 
-- **Previous Dashboard → New Dashboard:** check whether key Sales metrics remained consistent after the CRM migration.
-- **Rework CRM → New Dashboard:** check whether current dashboard results matched the operational CRM.
+These checks were designed to validate both **historical reporting continuity** and **current CRM accuracy**.
 
 ---
 
-## 1. Previous Dashboard Reconciliation
+## 1. Previous Power BI Reconciliation
+
+The previous Power BI dashboard was used as the reference for historical reporting continuity after the migration from Pipedrive to Rework CRM.
 
 The same reporting periods and filters were applied to both dashboards.
 
-Key metrics checked included:
+Key metrics compared:
 
 - Deal count
 - Deal stage
@@ -28,35 +29,56 @@ Key metrics checked included:
 - Lost reasons
 - Team performance
 
-For example:
+```text
+Same Period + Same Filters
+          ↓
+Previous Power BI
+          ↕
+     New Power BI
+```
 
-`Same period + Same filters → Old Dashboard vs. New Dashboard`
+When differences were identified, the underlying Data Mart and transformation logic were traced to determine whether the difference came from the CRM migration, historical date handling, or transformation logic.
 
-Any unexpected difference was traced back through the Data Mart, staging layer, and source data.
+For migrated records, particular attention was given to cases where Rework timestamps represented the **migration date rather than the original business date**. Historical Pipedrive values were therefore checked to ensure that the original business event was preserved where available.
 
 ---
 
 ## 2. Rework CRM Cross-check
 
-For current data, the same conditions were applied directly in Rework CRM and Power BI.
+The new Power BI dashboard was also checked against the current Rework CRM to verify that the reporting layer reflected the operational CRM correctly.
+
+Equivalent filters and conditions were applied in both systems.
 
 For example:
 
-`Pipeline + Stage + Period → CRM result vs. Power BI result`
+```text
+Pipeline + Stage + Period
+          ↓
+Rework CRM
+     ↕
+New Power BI
+```
 
-This helped verify that the dashboard reflected the operational CRM correctly.
+Key metrics compared:
+
+- Deal count
+- Deal stage
+- Won / Lost deals
+- Win rate
+- Lost reasons
+- Team performance
+
+This check validates the **current-state reporting accuracy** of the dashboard.
 
 ---
 
-## 3. Historical Data Check
+## Validation Summary
 
-Migrated records required an additional check because some Rework timestamps represented the **migration date**, not the original business date.
+The two checks answer two different questions:
 
-```mermaid
-flowchart LR
-    A[Pipedrive Original Date] --> B[Rework CRM]
-    B --> C[Data Transformation]
-    C --> D[Power BI]
-```
+| Validation | Question |
+|---|---|
+| **Previous Power BI → New Power BI** | Did the CRM migration preserve historical reporting continuity? |
+| **Rework CRM → New Power BI** | Does the new dashboard accurately reflect the current CRM? |
 
-For migrated records, the final dashboard was checked to ensure that the original Pipedrive value was preserved when available.
+Together, these checks validate both **historical continuity** and **current reporting accuracy**.
