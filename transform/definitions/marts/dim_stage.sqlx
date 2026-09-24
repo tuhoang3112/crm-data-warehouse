@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: sales stages within each pipeline",
+  assertions: {
+    uniqueKey: ["stage_id"],
+    nonNull: ["stage_id", "pipeline_id", "stage_name"]
+  }
+}
+
+SELECT
+  stage_id,
+  pipeline_id,
+  stage_name
+FROM ${ref("stg_stage")}

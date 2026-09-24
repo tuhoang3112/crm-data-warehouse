@@ -1,0 +1,9 @@
+config {
+  type: "assertion",
+  description: "Every activity must belong to an existing deal (fact_deal_activity.deal_id -> fact_deal.deal_id)"
+}
+
+SELECT a.activity_id, a.deal_id
+FROM ${ref("fact_deal_activity")} a
+LEFT JOIN ${ref("fact_deal")} f ON a.deal_id = f.deal_id
+WHERE f.deal_id IS NULL

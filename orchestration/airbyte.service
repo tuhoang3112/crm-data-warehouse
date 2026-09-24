@@ -1,0 +1,26 @@
+# /etc/systemd/system/airbyte.service
+# Starts Airbyte automatically every time the VM boots (after Docker is up),
+# and stops it cleanly on shutdown - so Cloud Scheduler can switch the VM
+# on/off without anyone SSH-ing in to restart Airbyte.
+#
+# Install:
+#   sudo cp airbyte.service /etc/systemd/system/airbyte.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable airbyte
+#   sudo systemctl restart airbyte
+#   sudo systemctl status airbyte   # expect: active
+
+[Unit]
+Description=Airbyte
+After=docker.service
+Requires=docker.service
+
+[Service]
+# Folder where Airbyte (docker compose) is installed
+WorkingDirectory=/root/airbyte
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

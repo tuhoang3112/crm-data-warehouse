@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{font-family:"DejaVu Sans",Arial,sans-serif;background:#fff;color:#1f2933;width:1600px;padding:36px 40px}
+h1{font-size:26px;margin-bottom:4px}
+.sub{color:#5b6770;font-size:15px;margin-bottom:26px}
+.row{display:flex;align-items:stretch;gap:0}
+.col{flex:1;display:flex;flex-direction:column;gap:12px}
+.lane{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5b6770;margin-bottom:2px;text-align:center}
+.box{border:2px solid var(--c);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.box b{display:block;font-size:15px;margin-bottom:4px;color:var(--c)}
+.box span{font-size:12.5px;line-height:1.45;color:#34414b;display:block}
+.src{--c:#6b4fbb;--bg:#f4f1fb}.ing{--c:#1f6fb2;--bg:#eef5fb}.raw{--c:#8a6d1d;--bg:#fbf6e6}
+.tr{--c:#2c7a4b;--bg:#eef8f1}.mart{--c:#b4552d;--bg:#fcf1ec}.bi{--c:#b8860b;--bg:#fff8e1}
+.arrow{width:46px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#8795a1}
+.grow{flex:1}
+.ops{margin-top:26px;border:2px dashed #8795a1;border-radius:12px;padding:14px 18px;display:flex;gap:18px}
+.ops div{flex:1;font-size:12.5px;line-height:1.45}
+.ops b{display:block;font-size:13.5px;margin-bottom:3px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:#1f2933;color:#fff;margin-left:6px;vertical-align:middle}
+</style></head><body>
+<h1>CRM Data System: Architecture <span class="tag">ELT</span></h1>
+<div class="sub">Extract &amp; load raw data as-is into BigQuery, then transform inside the warehouse with Dataform. Weekly batch, Sunday, Asia/Bangkok.</div>
+<div class="row">
+ <div class="col"><div class="lane">1 · Sources</div>
+  <div class="box src grow"><b>Rework CRM</b><span>REST API (POST, token auth)<br>deals · activities · contacts<br>accounts · pipelines · stages<br><i>incl. migrated Pipedrive history in custom fields</i></span></div>
+  <div class="box src"><b>Staff Google Sheet</b><span>user ID · name · job title<br>(maintained by hand)</span></div>
+ </div>
+ <div class="arrow">➜</div>
+ <div class="col"><div class="lane">2 · Ingestion</div>
+  <div class="box ing grow"><b>Airbyte (self-hosted)</b><span>Custom low-code connector<br>on GCE VM (Docker)<br>• pagination page/limit<br>• parent→child substreams<br>• incremental on <code>last_update</code><br>Sun 12:00</span></div>
+  <div class="box ing"><b>BigQuery external table</b><span>Native Google Sheets connector<br>read live at query time</span></div>
+ </div>
+ <div class="arrow">➜</div>
+ <div class="col"><div class="lane">3 · Raw layer</div>
+  <div class="box raw grow"><b>BigQuery · dw_rework_crm</b><span>9 raw tables<br>source structure kept<br>nested JSON (<code>form</code> custom fields)<br>append history + <code>_airbyte_extracted_at</code></span></div>
+ </div>
+ <div class="arrow">➜</div>
+ <div class="col" style="flex:1.25"><div class="lane">4 · Transform (Dataform)</div>
+  <div class="box tr"><b>Staging · 6 views</b><span>UNNEST + pivot custom fields · decode HTML/Base64<br>dedupe (QUALIFY) · Pipedrive date reconciliation</span></div>
+  <div class="box tr"><b>Mart · 7 tables</b><span>fact_deal · fact_deal_activity<br>dim_contact (SCD2) · dim_account · dim_user<br>dim_pipeline · dim_stage</span></div>
+  <div class="box tr"><b>22 data tests</b><span>unique · not null · FK · SCD2 · freshness · schema change</span></div>
+ </div>
+ <div class="arrow">➜</div>
+ <div class="col"><div class="lane">5 · Serving</div>
+  <div class="box mart grow"><b>BigQuery · dm_rework_crm</b><span>Validated data mart<br>least-privilege access<br>(no PII columns granted)</span></div>
+ </div>
+ <div class="arrow">➜</div>
+ <div class="col"><div class="lane">6 · Consumers</div>
+  <div class="box bi grow"><b>Power BI</b><span>Sales pipeline dashboard<br>Sales Manager · Sales Admin<br>Marketing · CS</span></div>
+  <div class="box bi"><b>AI-assisted analysis</b><span>uses metric-definitions.md as context</span></div>
+ </div>
+</div>
+<div class="ops">
+ <div><b>⏰ Orchestration</b>Cloud Scheduler: VM on 11:50 / off 12:30 · systemd auto-starts Airbyte · Airbyte sync 12:00 · Dataform production release 14:00 · Power BI refresh</div>
+ <div><b>🔔 Alerts</b>Airbyte failed-sync notification · Cloud Monitoring alert on failed Dataform run (incl. freshness &amp; new-field assertions)</div>
+ <div><b>🔀 Dev → Prod</b>Git · Dataform workspace → <code>_dev</code> datasets · merge to <code>main</code> → production release</div>
+ <div><b>💰 Cost &amp; access</b>VM ~40 min/week · BigQuery free tier · budget alert · per-service-account IAM</div>
+</div>
+</body></html>
