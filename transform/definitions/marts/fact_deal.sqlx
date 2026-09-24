@@ -1,0 +1,57 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Fact: one row per deal in the sales pipeline",
+  assertions: {
+    uniqueKey: ["deal_id"],
+    nonNull: ["deal_id", "stage_id", "deal_status", "created_at"],
+    rowConditions: [
+      "deal_status IN ('open', 'won', 'lost')",
+      "deal_value IS NULL OR deal_value >= 0"
+    ]
+  }
+}
+
+SELECT
+  sd.deal_id,
+  dc.contact_key,
+  sd.stage_id,
+  sd.owner_user_id,
+  sd.deal_name,
+  sd.deal_status,
+  -- Revenue: Pipedrive product amount for migrated deals, Rework deal value otherwise
+  -- (logic in stg_deal). Values are never published in this repo.
+  sd.deal_value,
+  sd.labels,
+  sd.is_alumni,
+  sd.group_registration,
+  sd.course_selected,
+  sd.learning_format,
+  sd.class_code,
+  sd.expectation,
+  sd.promotion_code,
+  sd.gift,
+  sd.need_consulting,
+  sd.preferred_consulting_time,
+  sd.pain_point_captured,
+  sd.pending_reason,
+  sd.pending_reason_detail,
+  sd.has_followup_plan,
+  sd.next_step,
+  sd.lost_reason,
+  sd.lost_reason_detail,
+  sd.utm_source,
+  sd.utm_medium,
+  sd.utm_content,
+  sd.utm_product,
+  sd.utm_person,
+  sd.created_at,
+  sd.updated_at,
+  sd.closed_at,
+  -- Internal CRM test deals: kept for traceability, excluded from every metric
+  sd.deal_id IN (${constants.TEST_DEAL_IDS.join(", ")}) AS is_test_deal
+FROM ${ref("stg_deal")} sd
+LEFT JOIN ${ref("dim_contact")} dc
+  ON sd.contact_id = dc.contact_id
+  AND sd.created_at >= dc.effective_date
+  AND sd.created_at < COALESCE(dc.end_date, '9999-12-31')

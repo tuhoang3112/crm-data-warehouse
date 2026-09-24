@@ -1,0 +1,10 @@
+config {
+  type: "assertion",
+  description: "Every non-null contact_key on a deal must exist in dim_contact (SCD2 surrogate key)"
+}
+
+SELECT f.deal_id, f.contact_key
+FROM ${ref("fact_deal")} f
+LEFT JOIN ${ref("dim_contact")} c ON f.contact_key = c.contact_key
+WHERE f.contact_key IS NOT NULL
+  AND c.contact_key IS NULL

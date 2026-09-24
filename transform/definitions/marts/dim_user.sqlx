@@ -1,0 +1,17 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: internal users/staff (source: internal Google Sheet via BigQuery external table)",
+  assertions: {
+    uniqueKey: ["user_id"],
+    nonNull: ["user_id"]
+  }
+}
+
+SELECT
+  SAFE_CAST(id AS INT64) AS user_id,
+  username,
+  CONCAT(last_name, ' ', first_name) AS full_name,
+  title AS job_title,
+  email
+FROM ${ref("user")}

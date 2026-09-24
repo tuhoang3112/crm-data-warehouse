@@ -1,0 +1,47 @@
+config {
+  type: "view",
+  schema: "dm_rework_crm_view",
+  description: "Staging: sales pipelines"
+}
+
+SELECT
+
+  -- Identifiers
+  id AS pipeline_id,
+
+  -- Text fields (decode HTML entities: &#124; -> |, &amp; -> &, strip HTML tags)
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(name, r'&#124;', '|'),
+    r'&amp;', '&'
+  ) AS pipeline_name,
+
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(content, r'<[^>]+>', ' '),
+      r'&amp;', '&'
+    ),
+    r'\s+', ' '
+  ) AS pipeline_content,
+
+  -- Numeric / status fields
+  status AS pipeline_status,
+  user_id AS owner_user_id,      -- FK to user
+  deal_prob AS default_probability,
+
+  -- Arrays (kept as raw JSON, UNNEST when needed)
+  owners,
+  followers,
+
+  -- Timestamps (unix timestamp -> local time, Asia/Bangkok)
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(since AS INT64)), 'Asia/Bangkok') AS created_at,
+  DATETIME(TIMESTAMP_SECONDS(SAFE_CAST(last_update AS INT64)), 'Asia/Bangkok') AS updated_at,
+
+  -- Metadata
+  _airbyte_extracted_at
+
+FROM ${ref("pipeline")}
+
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY id
+  ORDER BY _airbyte_extracted_at DESC
+) = 1

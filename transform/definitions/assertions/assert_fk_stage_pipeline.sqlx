@@ -1,0 +1,9 @@
+config {
+  type: "assertion",
+  description: "Every stage must belong to an existing pipeline (dim_stage.pipeline_id -> dim_pipeline.pipeline_id)"
+}
+
+SELECT s.stage_id, s.pipeline_id
+FROM ${ref("dim_stage")} s
+LEFT JOIN ${ref("dim_pipeline")} p ON s.pipeline_id = p.pipeline_id
+WHERE p.pipeline_id IS NULL

@@ -1,0 +1,29 @@
+config {
+  type: "assertion",
+  description: "SCD2: each contact_id has exactly one current version and no overlapping validity periods"
+}
+
+WITH current_versions AS (
+  SELECT contact_id, COUNTIF(is_current) AS n_current
+  FROM ${ref("dim_contact")}
+  GROUP BY contact_id
+),
+
+overlaps AS (
+  SELECT a.contact_id
+  FROM ${ref("dim_contact")} a
+  JOIN ${ref("dim_contact")} b
+    ON a.contact_id = b.contact_id
+    AND a.contact_key < b.contact_key
+    AND a.effective_date < COALESCE(b.end_date, DATE '9999-12-31')
+    AND b.effective_date < COALESCE(a.end_date, DATE '9999-12-31')
+)
+
+SELECT contact_id, 'current_version_count' AS issue
+FROM current_versions
+WHERE n_current != 1
+
+UNION ALL
+
+SELECT DISTINCT contact_id, 'overlapping_versions' AS issue
+FROM overlaps

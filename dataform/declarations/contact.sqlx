@@ -1,6 +1,0 @@
-config {
-  type: "declaration",
-  database: "tm-database-486412",
-  schema: "dw_rework_crm",
-  name: "contact"
-}
