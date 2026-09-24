@@ -1,0 +1,20 @@
+config {
+  type: "assertion",
+  description: "Raw CRM data must have been extracted by Airbyte within the expected sync window"
+}
+
+-- Fails when the latest Airbyte extraction is older than `freshness_max_hours`
+-- (set in workflow_settings.yaml to match the sync schedule + a buffer).
+-- A failure here means the sync did not run or failed silently -> stale dashboard.
+WITH latest AS (
+  SELECT 'deal' AS stream, MAX(_airbyte_extracted_at) AS last_extracted_at FROM ${ref("deal")}
+  UNION ALL
+  SELECT 'deal_activities', MAX(_airbyte_extracted_at) FROM ${ref("deal_activities")}
+)
+SELECT
+  stream,
+  last_extracted_at,
+  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), last_extracted_at, HOUR) AS hours_since_last_extract
+FROM latest
+WHERE last_extracted_at IS NULL
+   OR TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), last_extracted_at, HOUR) > ${dataform.projectConfig.vars.freshness_max_hours}

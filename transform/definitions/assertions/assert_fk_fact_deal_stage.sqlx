@@ -1,0 +1,10 @@
+config {
+  type: "assertion",
+  description: "Every deal must point to an existing stage (fact_deal.stage_id -> dim_stage.stage_id)"
+}
+
+-- Returns violating rows; the assertion passes when this query returns 0 rows.
+SELECT f.deal_id, f.stage_id
+FROM ${ref("fact_deal")} f
+LEFT JOIN ${ref("dim_stage")} s ON f.stage_id = s.stage_id
+WHERE s.stage_id IS NULL

@@ -2,11 +2,13 @@
 
 ## Data Model
 
-![CRM Data Mart](../assets/erd.png)
+![CRM Data Mart](./data-model.png)
 
 The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Activities.
 
 > **Public-data note:** field definitions are documented for modeling purposes. Raw customer records, credentials, and sensitive business values are not included in the public repository.
+>
+> **Columns vs metrics:** this file describes columns. How metrics (win rate, funnel, revenue...) are calculated from them is defined in [Metric Definitions](./metric-definitions.md).
 
 ---
 
@@ -21,20 +23,32 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `stage_id` | Current Sales stage | Validate FK relationship to `dim_stage.stage_id` |
 | `owner_user_id` | Sales owner responsible for the deal | Validate FK relationship to `dim_user.user_id` |
 | `deal_name` | Name of the deal | Raw values are not included in public outputs |
-| `deal_status` | Deal status: Open, Won, or Lost | Standardize categorical values |
+| `deal_status` | Deal status: `open`, `won`, or `lost` | Asserted: only these 3 values |
+| `deal_value` | Deal value (revenue recorded in the CRM). Migrated deals: original Pipedrive product amount; Rework deals: Rework deal value (`0` → NULL) | Not cash collected; values never published. See [Revenue](./metric-definitions.md#4-revenue) |
+| `labels` | CRM label (e.g. `lead cks`) | Manual tag, so coverage is incomplete |
+| `is_alumni` | Manual "returning customer" tag | Captures only a fraction of real alumni, see metric definitions §6.2 |
+| `group_registration` | Registered as a group | Review completeness |
 | `course_selected` | Course/product selected by the customer | Review completeness and category consistency |
 | `learning_format` | Selected learning format | Review completeness and category consistency |
-| `pain_point_captured` | Whether the customer's pain point has been identified | High NULL rate requires source-workflow review |
-| `pending_reason` | Reason why the deal is pending | Review completeness and category consistency |
-| `next_step` | Next planned Sales action | High NULL rate requires source-workflow review |
+| `class_code` | Class code the customer enrolled in | Prefers the main field, falls back to the secondary class-code field |
+| `expectation` | Customer's stated expectation (free text) | Best signal for "customer need identified" |
+| `promotion_code`, `gift` | Promotion code / gift applied | Review completeness |
+| `need_consulting`, `preferred_consulting_time` | Consulting request and preferred time | Review completeness |
+| `pain_point_captured` | Whether the customer's pain point has been identified | Recently added field, so high NULL rate is expected |
+| `pending_reason` | Reason why the deal is pending | Recently added field, so high NULL rate is expected |
+| `pending_reason_detail` | Free-text detail of the pending reason | Recently added field |
+| `has_followup_plan` | Whether a follow-up plan exists | Recently added field |
+| `next_step` | Next planned Sales action (Base64-decoded for migrated deals) | Recently added field, so high NULL rate is expected |
 | `lost_reason` | Standardized reason why the deal was lost | Validate standardized categories and completeness |
 | `lost_reason_detail` | Additional detail about the lost reason | Review completeness and business usage |
 | `utm_source` | Marketing acquisition source | Normalize casing and whitespace |
 | `utm_medium` | Marketing acquisition medium | Normalize casing and whitespace |
 | `utm_content` | Campaign/content attribution | Normalize casing, whitespace, and equivalent values |
+| `utm_product`, `utm_person` | Product / person tags | `utm_person` is filled by Sales, not Marketing. Do not use for campaign attribution |
 | `created_at` | Original deal creation date | For migrated records, preserve original Pipedrive date when available |
 | `updated_at` | Last update date | Validate timestamp behavior |
-| `closed_at` | Deal close date | For migrated records, validate historical date handling |
+| `closed_at` | Deal close date | Migrated records: Pipedrive won/lost time, else Rework close date |
+| `is_test_deal` | `TRUE` for internal CRM test deals | Exclude from every metric (`WHERE NOT is_test_deal`) |
 
 > For migrated records, historical Pipedrive dates are used when the corresponding Rework timestamps represent the migration event.
 
@@ -52,6 +66,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `activity_content` | Activity content or description | Raw values are not included in public outputs |
 | `owner_user_id` | User associated with the activity | Validate FK relationship to `dim_user.user_id` |
 | `created_at` | Activity creation time | Validate timestamp consistency |
+| `updated_at` | Activity last update time | – |
 
 ---
 
@@ -63,8 +78,11 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 |---|---|---|
 | `contact_key` | Surrogate key for a Contact version | Must be unique |
 | `contact_id` | CRM Contact identifier | Validate business-key/version uniqueness |
-| `account_id` | Account associated with the Contact | **FK integrity requires investigation** |
+| `account_id` | Account associated with the Contact | `0` = contact without a company (expected). Report match rate with and without `0` |
 | `contact_name` | Contact name | Raw values are not included in public outputs |
+| `email`, `phone`, `facebook` | Contact details | **PII.** Not granted to the BI/AI access layer |
+| `date_of_birth` | Birth year as entered | ~26% empty, used only for age-group analysis |
+| `university` | University | Review completeness |
 | `location` | Contact location | Historical changes preserved through SCD2 |
 | `job_title` | Contact job title | Historical changes preserved through SCD2 |
 | `created_at` | Original Contact creation date | Validate against historical migration logic |
@@ -86,7 +104,9 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `account_name` | Company/account name | Raw values are not included in public outputs |
 | `industry` | Company industry | Review category consistency |
 | `company_size` | Company size | Review category consistency |
-| `website` | Company website | Review whether the field provides analytical value |
+| `website`, `linkedin_profile`, `brand_name` | Company web presence | Mostly empty. Review whether the field provides analytical value |
+| `account_address`, `account_description` | Address and description | Mostly empty |
+| `created_at`, `updated_at` | Creation (Pipedrive date for migrated records) / last update | – |
 
 ---
 
@@ -95,7 +115,8 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | Field | Definition | Data Quality Consideration |
 |---|---|---|
 | `pipeline_id` | Unique Pipeline identifier | Should be unique and non-null |
-| `pipeline_name` | Pipeline name | Validate category consistency |
+| `pipeline_name` | Pipeline name | Nurturing Pipeline is merged into Sales Prospecting in metrics |
+| `pipeline_content` | Pipeline description | – |
 
 ---
 
@@ -113,9 +134,13 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 
 | Field | Definition | Data Quality Consideration |
 |---|---|---|
-| `user_id` | Internal user identifier | Validate FK relationships from fact tables |
+| `user_id` | Internal user identifier | Missing IDs in fact tables = staff who have left (expected) |
+| `username` | CRM username | – |
 | `full_name` | Employee name | Raw values are not included in public outputs |
-| `job_title` | Employee job title | Review consistency where used analytically |
+| `job_title` | Employee job title | Drives team assignment (Sales / CS), so keep titles consistent in the source sheet |
+| `email` | Work email | **PII.** Not granted to the BI/AI access layer |
+
+> Source: internal Google Sheet exposed as a BigQuery external table.
 
 ---
 
@@ -130,6 +155,6 @@ The review covers:
 3. High-null columns
 4. Low-value fields
 5. SCD Type 2 validation
-6. Automated data-quality controls as a next step
+6. Automated data-quality controls: now implemented as Dataform assertions (see [transform/](../transform/README.md#data-tests-22-assertions))
 
 → [View the full Data Quality Review](./data-quality-review.pdf)

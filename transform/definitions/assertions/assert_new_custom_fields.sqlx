@@ -1,0 +1,12 @@
+config {
+  type: "assertion",
+  description: "Schema-change alert: fails when a new CRM custom field appeared since the last run"
+}
+
+-- Fails once (on the run where the field first appears), which triggers the
+-- workflow-failure alert. Action: decide whether to add the field to the pivot
+-- in the matching stg_* model. The next run passes again automatically.
+SELECT entity, field_code, field_type, first_seen_at
+FROM ${ref("mon_custom_field_registry")}
+WHERE NOT is_baseline
+  AND first_seen_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL ${dataform.projectConfig.vars.freshness_max_hours} HOUR)

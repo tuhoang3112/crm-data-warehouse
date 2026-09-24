@@ -1,0 +1,43 @@
+config {
+  type: "incremental",
+  schema: "dm_rework_crm_monitoring",
+  uniqueKey: ["entity", "field_code"],
+  description: "Registry of every CRM custom-field code ever seen, with the date it first appeared. Used to detect source schema changes."
+}
+
+-- Why: Rework stores custom fields as a JSON array (`form`), so a new CRM field
+-- does NOT change the raw table schema - it silently appears inside the JSON and
+-- is ignored by the staging pivots. This table remembers every field code seen;
+-- assert_new_custom_fields fails when a new code shows up, so we know to map it.
+WITH codes AS (
+  SELECT 'deal' AS entity, JSON_VALUE(f, '$.code') AS field_code, JSON_VALUE(f, '$.type') AS field_type
+  FROM ${ref("deal")}, UNNEST(JSON_QUERY_ARRAY(form)) AS f
+  UNION ALL
+  SELECT 'contact', JSON_VALUE(f, '$.code'), JSON_VALUE(f, '$.type')
+  FROM ${ref("contact")}, UNNEST(JSON_QUERY_ARRAY(form)) AS f
+  UNION ALL
+  SELECT 'account', JSON_VALUE(f, '$.code'), JSON_VALUE(f, '$.type')
+  FROM ${ref("account")}, UNNEST(JSON_QUERY_ARRAY(form)) AS f
+),
+
+distinct_codes AS (
+  SELECT entity, field_code, ANY_VALUE(field_type) AS field_type
+  FROM codes
+  WHERE field_code IS NOT NULL
+  GROUP BY entity, field_code
+)
+
+SELECT
+  c.entity,
+  c.field_code,
+  c.field_type,
+  CURRENT_TIMESTAMP() AS first_seen_at,
+  -- Codes loaded on the very first build are the baseline, not "new" fields
+  ${when(incremental(), "FALSE", "TRUE")} AS is_baseline
+FROM distinct_codes c
+${when(incremental(),
+  `WHERE NOT EXISTS (
+     SELECT 1 FROM ${self()} r
+     WHERE r.entity = c.entity AND r.field_code = c.field_code
+   )`
+)}

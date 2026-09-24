@@ -1,6 +1,0 @@
-config {
-  type: "declaration",
-  database: "your-project-id",
-  schema: "dw_rework_crm",
-  name: "account"
-}

@@ -1,0 +1,13 @@
+# Dataform
+node_modules/
+.df-credentials.json
+transform/.df-credentials.json
+
+# Secrets / local
+.env
+*.key.json
+service-account*.json
+
+# OS
+.DS_Store
+Thumbs.db

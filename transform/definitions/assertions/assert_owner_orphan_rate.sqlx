@@ -1,0 +1,23 @@
+config {
+  type: "assertion",
+  description: "Share of deals whose owner is missing from dim_user stays under the tolerated threshold"
+}
+
+-- Owners missing from dim_user are staff who have left the company - expected,
+-- so this is a threshold check, not a strict FK check. A sudden jump above the
+-- threshold usually means the staff Google Sheet was edited or failed to load.
+WITH owner_check AS (
+  SELECT
+    COUNTIF(u.user_id IS NULL) AS orphan_deals,
+    COUNT(*) AS total_deals
+  FROM ${ref("fact_deal")} f
+  LEFT JOIN ${ref("dim_user")} u ON f.owner_user_id = u.user_id
+  WHERE f.owner_user_id IS NOT NULL
+    AND NOT f.is_test_deal
+)
+SELECT
+  orphan_deals,
+  total_deals,
+  ROUND(100 * SAFE_DIVIDE(orphan_deals, total_deals), 2) AS orphan_pct
+FROM owner_check
+WHERE 100 * SAFE_DIVIDE(orphan_deals, total_deals) > ${dataform.projectConfig.vars.max_owner_orphan_pct}
