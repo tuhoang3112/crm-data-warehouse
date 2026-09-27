@@ -36,8 +36,8 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 | Source | Method |
 |---|---|
 | **Rework CRM API**: deals, activities, contacts, accounts, pipelines, stages, services (8 streams) | Custom Airbyte connector ([YAML](ingestion/airbyte/rework-crm-connector.yaml)). `deal` and `contact` sync incrementally on `last_update`; the other streams are full refresh |
-| **Staff Google Sheet** | BigQuery external table |
-| **Class schedule** (Google Sheet filled in by Sales) | BigQuery external table `course_schedule`, modeled into `dim_class_schedule` (class ID, class code, class start date, course) |
+| **Staff Google Sheet**: user ID, name, job title (maintained by hand) | BigQuery external table `user`, modeled into `dim_user` |
+| **Class schedule Google Sheet**: class ID, class code, start date, course (filled in by Sales) | BigQuery external table `course_schedule`, modeled into `dim_class_schedule` |
 
 Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`).
 → [ingestion/README](ingestion/README.md)
