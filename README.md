@@ -62,14 +62,13 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 
 ## Transformation & data quality
 
-Dataform builds **6 staging views → 8 mart tables**. **24 assertions** are defined:
+Dataform builds **6 staging views → 8 mart tables**. **23 assertions** are defined:
 
 - **Uniqueness / not-null** on every mart key
 - **Referential integrity**: deal → stage, deal → contact version, activity → deal, stage → pipeline
 - **Validity**: `deal_status ∈ {open, won, lost}`, `deal_value ≥ 0`, SCD2 date logic
 - **SCD2**: exactly one current version per contact, no overlaps
 - **Freshness**: raw data not older than a set threshold
-- **Schema change**: new CRM custom fields
 - **Class schedule**: unique class codes, no missing start dates
 
 Before the dashboard was built, a [Data Quality Review](docs/data-quality-review.pdf) was run on the mart. For example, it found a 99.97% orphan rate on `dim_contact.account_id`. Part of this is the business rule `account_id = 0` = contact without a company; the remaining orphans are still being investigated. The dashboard was also [reconciled](docs/testing-validation.md) against the previous Pipedrive-based dashboard and against Rework CRM.
@@ -91,7 +90,7 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 | Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
 | Tables | **10** raw (8 Airbyte + 2 Google Sheets) → **6** staging views → **8** mart tables |
 | Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
-| Data tests | **24** assertions defined |
+| Data tests | **23** assertions defined |
 | Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
 | Data latency | *to be measured* |
 | Monthly cost | *to be measured* |

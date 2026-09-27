@@ -10,7 +10,6 @@ transform/
     ├── declarations/             # sources: 6 Airbyte tables + 2 Google Sheets (staff, class schedule)
     ├── staging/   (6 views)      # clean, decode, pivot custom fields, dedupe, reconcile Pipedrive history
     ├── marts/     (8 tables)     # fact_deal, fact_deal_activity, dim_contact (SCD2), dim_account, dim_pipeline, dim_stage, dim_user, dim_class_schedule
-    ├── monitoring/               # mon_custom_field_registry (schema-change detection)
     └── assertions/               # custom data tests
 ```
 
@@ -21,7 +20,6 @@ transform/
 | Raw | `dw_rework_crm` | Airbyte tables + Sheets external table | Untouched source data, full history |
 | Staging | `dm_rework_crm_view` | **Views** | Always reflects the latest raw data; no storage cost |
 | Mart | `dm_rework_crm` | **Tables** (full rebuild), `dim_contact` **incremental** | Fast, stable tables for Power BI |
-| Monitoring | `dm_rework_crm_monitoring` | Incremental | Pipeline metadata |
 
 ## Key transformation logic
 
@@ -33,7 +31,7 @@ transform/
 - **SCD Type 2 (`dim_contact`):** a new version is inserted when `job_title` or `location` changes. A post-operation closes the previous version (`end_date`, `is_current = FALSE`). `fact_deal` joins the contact version valid at the deal's `created_at`.
 - **Test deals** are flagged (`is_test_deal`), not deleted, so they stay traceable but are excluded from metrics.
 
-## Data tests (24 assertions)
+## Data tests (23 assertions)
 
 Defined and compiled; not yet run on production data.
 
@@ -46,7 +44,6 @@ Defined and compiled; not yet run on production data.
 | Tolerated integrity | `assert_owner_orphan_rate` | share of deals owned by users missing from `dim_user` (people who left) ≤ 10% |
 | SCD2 | `assert_scd2_one_current_version` | exactly one current version per contact, no overlapping periods |
 | Freshness | `assert_source_freshness` | raw data extracted within `freshness_max_hours` |
-| Schema change | `assert_new_custom_fields` | no unmapped CRM custom field appeared since the last run |
 
 A failing assertion fails the workflow run.
 

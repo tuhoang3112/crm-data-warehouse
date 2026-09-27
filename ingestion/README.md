@@ -60,7 +60,7 @@ These are written as recommendations rather than edits to the YAML, because the 
 
 | Change in the CRM | What happens | How it is detected |
 |---|---|---|
-| **New custom field** | Custom fields live inside the `form` JSON array, so the **raw schema does not change** and nothing breaks. The new field is simply not used until it is mapped in `stg_*` | `mon_custom_field_registry` + assertion `assert_new_custom_fields` fails the Dataform run where a new field code first appears |
+| **New custom field** | Custom fields live inside the `form` JSON array, so the **raw schema does not change** and nothing breaks. The new field is simply not used until it is mapped in `stg_*` | Not detected automatically: a new field is added to the staging pivot when it is needed |
 | New top-level column | Staging selects explicit columns, so the new column is ignored until it is added to the model | Airbyte connection schema settings |
 | Column removed or renamed | The staging view errors, so the Dataform run fails and downstream marts are not rebuilt (they keep the last good data) | Failed Dataform run |
 
