@@ -113,6 +113,7 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 ## Planned / in progress
 
 - [ ] Add the `dim_class_schedule` source and model to `transform/`
+- [ ] **AI report automation (next phase):** weekly/monthly reports are still built by hand (pull numbers, paste into sheets/slides, write commentary on changes), so they take time, are often late, and anomalies are only caught when someone happens to notice. Next step: generate them automatically from this warehouse, using [metric-definitions.md](docs/metric-definitions.md) as the AI's context
 - [ ] Run the 22 assertions on production data and record results
 - [ ] Measure data latency and monthly cost (queries in [`orchestration/sql/`](orchestration/sql/))
 - [ ] Document the exact schedule times, alert and access setup, with screenshots in [`docs/proof-of-running/`](docs/proof-of-running/)
