@@ -32,21 +32,23 @@ OUT_DIR = Path(__file__).parent / "data"
 # measures filter on them.
 #   Verified against the real mart: pipeline names, Sales pipeline stages,
 #   activity types, lost reasons.
-#   PLACEHOLDER (replace with the real values): stages of the CS, B2B and
-#   Nurturing pipelines.
+#   PLACEHOLDER (replace with the real values): stages of the CS and B2B
+#   pipelines.
 # ---------------------------------------------------------------------------
 
+# Real pipeline IDs and names from dm_rework_crm.dim_pipeline
+SALES, CS, B2B = 2042, 2037, 2576
+
 PIPELINES = {
-    1: ("Sales | Prospecting Pipeline", [
+    SALES: ("Sales | Prospecting Pipeline", [
         "Lead In", "Interested", "Engaged", "Needs Exploration",
         "Solution Fit", "Ready To Purchase", "Payment Completion"]),
-    2: ("CS | Retention Pipeline", [  # PLACEHOLDER stages
+    CS: ("CS | Retention Pipeline", [  # PLACEHOLDER stages
         "Lead In", "Interested", "Engaged", "Ready To Purchase", "Payment Completion"]),
-    3: ("B2B pipeline", [  # PLACEHOLDER stages
+    B2B: ("B2B pipeline - Đào tạo doanh nghiệp", [  # PLACEHOLDER stages
         "Lead In", "Needs Exploration", "Ready To Purchase", "Payment Completion"]),
-    4: ("Nurturing Pipeline", ["Timing Not Ready", "Re-Activated"]),  # PLACEHOLDER stages
 }
-PIPELINE_WEIGHTS = {1: 0.82, 2: 0.10, 3: 0.05, 4: 0.03}
+PIPELINE_WEIGHTS = {SALES: 0.85, CS: 0.10, B2B: 0.05}
 
 # Lost reasons allowed at each Sales-pipeline stage (from the funnel rules)
 LOST_REASONS_BY_STAGE = {
@@ -242,17 +244,15 @@ def main(n_deals):
         version = next(v for v in contact_versions[contact_id]
                        if v["effective_date"] <= created.date()
                        and (v["end_date"] is None or created.date() < v["end_date"]))
-        owner = rng.choice(cs_ids if pid == 2 else sales_ids)
+        owner = rng.choice(cs_ids if pid == CS else sales_ids)
         course = rng.choices(course_names, weights=COURSE_WEIGHTS)[0]
         age_days = (now - created).days
 
         # Outcome: recent deals are more likely to still be open
         p_open = 0.65 if age_days < 21 else 0.25 if age_days < 60 else 0.04
-        p_won = {1: 0.38, 2: 0.62, 3: 0.80, 4: 0.0}[pid]
+        p_won = {SALES: 0.38, CS: 0.62, B2B: 0.80}[pid]
         r = rng.random()
         status = "open" if r < p_open else ("won" if rng.random() < p_won else "lost")
-        if pid == 4 and status == "won":
-            status = "open"
 
         # How far the deal progressed through the stages
         last = len(stages) - 1
@@ -283,7 +283,7 @@ def main(n_deals):
         lost_reason = None
         if status == "lost":
             lost_reason = rng.choice(LOST_REASONS_BY_STAGE.get(stage, GENERIC_LOST_REASONS)) \
-                if pid == 1 else rng.choice(GENERIC_LOST_REASONS)
+                if pid == SALES else rng.choice(GENERIC_LOST_REASONS)
 
         src, med, _ = rng.choices(CHANNELS, weights=[c[2] for c in CHANNELS])[0]
         if status == "won" and rng.random() < 0.08:
@@ -297,7 +297,7 @@ def main(n_deals):
             "deal_id": deal_id, "contact_key": version["contact_key"],
             "stage_id": stage_ids[(pid, stage)], "owner_user_id": owner,
             "deal_name": f"Deal {deal_id}", "deal_status": status, "deal_value": value,
-            "labels": "lead cks" if pid == 1 and status == "open" and rng.random() < 0.05 else None,
+            "labels": "lead cks" if pid == SALES and status == "open" and rng.random() < 0.05 else None,
             "is_alumni": "Cựu học viên" if rng.random() < 0.03 else None,
             "group_registration": None, "course_selected": course,
             "learning_format": rng.choice(LEARNING_FORMATS), "class_code": class_code,

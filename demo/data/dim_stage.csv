@@ -1,19 +1,17 @@
 stage_id,pipeline_id,stage_name
-101,1,Lead In
-102,1,Interested
-103,1,Engaged
-104,1,Needs Exploration
-105,1,Solution Fit
-106,1,Ready To Purchase
-107,1,Payment Completion
-108,2,Lead In
-109,2,Interested
-110,2,Engaged
-111,2,Ready To Purchase
-112,2,Payment Completion
-113,3,Lead In
-114,3,Needs Exploration
-115,3,Ready To Purchase
-116,3,Payment Completion
-117,4,Timing Not Ready
-118,4,Re-Activated
+101,2042,Lead In
+102,2042,Interested
+103,2042,Engaged
+104,2042,Needs Exploration
+105,2042,Solution Fit
+106,2042,Ready To Purchase
+107,2042,Payment Completion
+108,2037,Lead In
+109,2037,Interested
+110,2037,Engaged
+111,2037,Ready To Purchase
+112,2037,Payment Completion
+113,2576,Lead In
+114,2576,Needs Exploration
+115,2576,Ready To Purchase
+116,2576,Payment Completion
