@@ -67,6 +67,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 | `fact_deal_activity` | 1 row per activity | Notes, calls, emails, changelog |
 | `dim_contact` | 1 row per contact **version** | **SCD Type 2** on `job_title`, `location`. Deals join the version valid at deal creation |
 | `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage` | 1 row per entity | `dim_user` comes from the staff Google Sheet |
+| `dim_class_schedule` | 1 row per class | Class code, start date, course, from the class-schedule Google Sheet |
 
 → [Data Dictionary](docs/data-dictionary.md) (columns) · [Metric Definitions](docs/metric-definitions.md) (metrics)
 
@@ -74,7 +75,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 
 ## Transformation & data quality
 
-Dataform builds **6 staging views → 7 mart tables**. **22 assertions** are defined:
+Dataform builds **6 staging views → 7 mart tables** (`dim_class_schedule` is not yet in this repo). **22 assertions** are defined:
 
 - **Uniqueness / not-null** on every mart key
 - **Referential integrity**: deal → stage, deal → contact version, activity → deal, stage → pipeline
@@ -100,7 +101,7 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 | | |
 |---|---|
 | Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
-| Tables | **9** raw → **6** staging views → **7** mart tables |
+| Tables | **10** raw (8 Airbyte + 2 Google Sheets) → **6** staging views → **8** mart tables |
 | Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
 | Data tests | **22** assertions defined |
 | Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
