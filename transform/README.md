@@ -31,16 +31,3 @@ transform/
 ## Data quality
 
 Known and **accepted** data issues are documented in [`../docs/data-dictionary.md`](../docs/data-dictionary.md). Example: `dim_contact.account_id = 0` means "contact without a company".
-
-## Run it
-
-```bash
-npm i -g @dataform/cli@3.0.52
-cd transform
-dataform compile                       # validates SQLX + dependency graph (no credentials needed)
-dataform init-creds                    # BigQuery credentials (.df-credentials.json, git-ignored)
-dataform run --schema-suffix dev       # build everything into *_dev datasets
-dataform run --actions fact_deal --include-deps   # rebuild one model and its upstream
-```
-
-Set `defaultProject` in `workflow_settings.yaml` to your GCP project ID before running.
