@@ -63,7 +63,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `deal_id` | Deal associated with the activity | Validate FK relationship to `fact_deal.deal_id` |
 | `activity_type` | Activity type, such as Call, Note, or Change Log | Standardize activity categories |
 | `activity_content` | Activity content or description | Raw values are not included in public outputs |
-| `owner_user_id` | User associated with the activity | Validate FK relationship to `dim_user.user_id` |
+| `activity_owner_user_id` | User who performed the activity | Validate FK relationship to `dim_user.user_id` |
 | `created_at` | Activity creation time | Validate timestamp consistency |
 | `updated_at` | Activity last update time | – |
 

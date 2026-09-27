@@ -1,7 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Fact: one row per deal activity (note, call, changelog...)"
+  description: "Fact: one row per deal activity (note, changelog, activity log, file)"
 }
 
 SELECT
@@ -9,7 +9,7 @@ SELECT
   deal_id,                    -- FK to fact_deal
   activity_type_label AS activity_type,
   activity_content,
-  owner_user_id,               -- FK to dim_user
+  owner_user_id AS activity_owner_user_id,  -- FK to dim_user: the user who performed the activity
   created_at,
   updated_at
 FROM ${ref("stg_deal_activity")}

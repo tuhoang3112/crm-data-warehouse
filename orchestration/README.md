@@ -43,4 +43,3 @@ Based on how the models are built:
 - [ ] Alert setup (failed sync / failed run / late data)
 - [ ] Access control setup
 - [ ] Cost control setup and monthly cost
-- [ ] Screenshots in [`docs/proof-of-running/`](../docs/proof-of-running/)

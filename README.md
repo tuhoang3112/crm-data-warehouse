@@ -103,9 +103,7 @@ crm-data-warehouse/
     ├── metric-definitions.md   # metric formulas, sources, users, pitfalls
     ├── data-dictionary.md      # column definitions
     ├── data-quality-review.pdf
-    ├── testing-validation.md   # dashboard reconciliation
-    ├── project-requirements.md
-    └── proof-of-running/       # screenshots of the running pipeline
+    └── testing-validation.md   # dashboard reconciliation
 ```
 
 ## Data privacy
