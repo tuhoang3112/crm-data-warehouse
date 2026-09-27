@@ -39,9 +39,7 @@ SELECT
   sd.utm_person,
   sd.created_at,
   sd.updated_at,
-  sd.closed_at,
-  -- Internal CRM test deals: kept for traceability, excluded from every metric
-  sd.deal_id IN (${constants.TEST_DEAL_IDS.join(", ")}) AS is_test_deal
+  sd.closed_at
 FROM ${ref("stg_deal")} sd
 LEFT JOIN ${ref("dim_contact")} dc
   ON sd.contact_id = dc.contact_id

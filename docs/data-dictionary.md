@@ -48,7 +48,6 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `created_at` | Original deal creation date | For migrated records, preserve original Pipedrive date when available |
 | `updated_at` | Last update date | Validate timestamp behavior |
 | `closed_at` | Deal close date | Migrated records: Pipedrive won/lost time, else Rework close date |
-| `is_test_deal` | `TRUE` for internal CRM test deals | Exclude from every metric (`WHERE NOT is_test_deal`) |
 
 > For migrated records, historical Pipedrive dates are used when the corresponding Rework timestamps represent the migration event.
 

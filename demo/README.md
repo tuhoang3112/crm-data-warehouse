@@ -31,7 +31,7 @@ Labels that Power BI measures filter on must match the real mart **exactly**. Pi
 
 1. Save a copy of the report.
 2. **Transform data** → for each table, **Source** step → replace the BigQuery source with *Text/CSV* pointing to `demo/data/<table>.csv`.
-3. Check column types: dates → *Date/Time*, `deal_value` → *Decimal*, `is_current`/`is_test_deal` → *True/False* → **Close & Apply**.
+3. Check column types: dates → *Date/Time*, `deal_value` → *Decimal*, `is_current` → *True/False* → **Close & Apply**.
 
 ## 3. Check and share
 

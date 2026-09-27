@@ -332,7 +332,6 @@ def main(n_deals):
             "utm_content": f"campaign_{rng.randint(1, 12):02d}" if src else None,
             "utm_product": None, "utm_person": None,
             "created_at": created, "updated_at": closed or t, "closed_at": closed,
-            "is_test_deal": False,
         })
 
     print(f"Writing fake data to {OUT_DIR}/")
@@ -355,7 +354,7 @@ def main(n_deals):
         "preferred_consulting_time", "pain_point_captured", "pending_reason", "pending_reason_detail",
         "has_followup_plan", "next_step", "lost_reason", "lost_reason_detail", "utm_source",
         "utm_medium", "utm_content", "utm_product", "utm_person", "created_at", "updated_at",
-        "closed_at", "is_test_deal"])
+        "closed_at"])
     write_csv("fact_deal_activity", fact_activity, [
         "activity_id", "deal_id", "activity_type", "activity_content", "owner_user_id",
         "created_at", "updated_at"])

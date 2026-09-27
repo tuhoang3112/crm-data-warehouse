@@ -50,7 +50,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 
 | Table | Grain | Notes |
 |---|---|---|
-| `fact_deal` | 1 row per deal | Status, stage, owner, **deal value (revenue)**, course, attribution (UTM), Pipedrive-reconciled dates, `is_test_deal` |
+| `fact_deal` | 1 row per deal | Status, stage, owner, **deal value (revenue)**, course, attribution (UTM), Pipedrive-reconciled dates |
 | `fact_deal_activity` | 1 row per activity | Notes, calls, emails, changelog |
 | `dim_contact` | 1 row per contact **version** | **SCD Type 2** on `job_title`, `location`. Deals join the version valid at deal creation |
 | `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage` | 1 row per entity | `dim_user` comes from the staff Google Sheet |

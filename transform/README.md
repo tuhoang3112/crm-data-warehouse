@@ -5,7 +5,6 @@ All transformations run in **Dataform** (BigQuery-native, SQLX + Git). Dataform 
 ```text
 transform/
 ├── workflow_settings.yaml        # project defaults
-├── includes/constants.js         # business constants (test deal IDs)
 └── definitions/
     ├── declarations/             # sources: 6 Airbyte tables + 2 Google Sheets (staff, class schedule)
     ├── staging/   (6 views)      # clean, decode, pivot custom fields, dedupe, reconcile Pipedrive history
@@ -28,7 +27,6 @@ transform/
 - **Encoded values:** Pipedrive notes/next steps are Base64 (`SAFE.FROM_BASE64`), HTML tags/entities are stripped with `REGEXP_REPLACE`, and lost-reason IDs are mapped to labels.
 - **Dedup:** `QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _airbyte_extracted_at DESC) = 1`.
 - **SCD Type 2 (`dim_contact`):** a new version is inserted when `job_title` or `location` changes. A post-operation closes the previous version (`end_date`, `is_current = FALSE`). `fact_deal` joins the contact version valid at the deal's `created_at`.
-- **Test deals** are flagged (`is_test_deal`), not deleted, so they stay traceable but are excluded from metrics.
 
 ## Data quality
 
