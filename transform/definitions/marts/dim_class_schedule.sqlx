@@ -1,0 +1,16 @@
+config {
+  type: "table",
+  schema: "dm_rework_crm",
+  description: "Dimension: class schedule (source: class-schedule Google Sheet filled in by Sales)",
+  assertions: {
+    uniqueKey: ["class_code"],
+    nonNull: ["class_code", "class_start_date"]
+  }
+}
+
+SELECT
+  SAFE_CAST(ID AS INT64) AS class_id,
+  Name AS class_code,
+  `Ngày khai giảng` AS class_start_date,
+  Product AS course
+FROM ${ref("course_schedule")}

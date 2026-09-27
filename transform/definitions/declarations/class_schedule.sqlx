@@ -1,6 +1,0 @@
-config {
-  type: "declaration",
-  schema: "dm_rework_crm",
-  name: "dim_class_schedule",
-  description: "Class schedule (class_id, class_code, class_start_date, course). Google Sheet filled in by Sales, connected to BigQuery as an external table and used directly as a dimension."
-}
