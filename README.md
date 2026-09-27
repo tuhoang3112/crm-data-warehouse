@@ -12,21 +12,8 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 
 - The old reports still read from the Pipedrive database, which was no longer used, so **they stopped reflecting reality**.
 - New reports built on Rework showed **wrong dates**: when historical data was imported into Rework, each record's real creation time was replaced with the **import time**.
-- Getting a number meant **combining data by hand**.
 
 **Goal:** one system that brings CRM data into one place, cleans it, keeps it up to date, and defines every metric once, while **preserving Pipedrive history**.
-
----
-
-## Business questions
-
-| # | Question | Answer |
-|---|---|---|
-| 1 | **Where do the enrolment/revenue numbers come from, and why did sources disagree?** | Now one source: Rework CRM API → `fact_deal`. Numbers disagreed because **(a)** the old reports still read from the retired Pipedrive database, and **(b)** reports on Rework used the **import time** as the creation date for all migrated records. The original Pipedrive dates survive in Rework custom fields, so the model restores them: `COALESCE(pipedrive_created_at, rework_created_at)`. Separately, some tracking values on real deals were recorded inconsistently at the source (e.g. `fanpage` vs `fanpage_tm`); these are merged under the rules in [metric-definitions.md](docs/metric-definitions.md) |
-| 2 | **How far behind reality is the dashboard?** | The pipeline runs **daily at 12:00**; exact latency is *not yet measured*. The query is ready ([`pipeline_run_history.sql`](orchestration/sql/pipeline_run_history.sql)), and `assert_source_freshness` fails the Dataform run when raw data is older than a set threshold |
-| 3 | **When a dashboard number is wrong, how long does it take to trace it to the source?** | *Not yet measured.* The trace path exists: every metric lists its source tables ([metric-definitions](docs/metric-definitions.md)), Dataform's `ref()` graph links mart → staging → raw, and each raw row keeps `_airbyte_extracted_at` |
-| 4 | **What does the warehouse cost per month, and is it over budget?** | *Not yet measured.* Query ready: [`cost_monitoring.sql`](orchestration/sql/cost_monitoring.sql) |
-| 5 | **When the source changes structure, does the pipeline break, and how fast do we know?** | CRM custom fields are stored inside a JSON array (`form`), so a **new CRM field does not change the raw table schema** and does not break the pipeline. It is only picked up once it is added to the staging pivot. `assert_new_custom_fields` is written to flag new fields on the next run. Details: [ingestion/README](ingestion/README.md#schema-change-handling) |
 
 ---
 
@@ -110,27 +97,6 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 
 ---
 
-## Planned / in progress
-
-- [ ] Add the `dim_class_schedule` source and model to `transform/`
-- [ ] **AI report automation (next phase):** weekly/monthly reports are still built by hand (pull numbers, paste into sheets/slides, write commentary on changes), so they take time, are often late, and anomalies are only caught when someone happens to notice. Next step: generate them automatically from this warehouse, using [metric-definitions.md](docs/metric-definitions.md) as the AI's context
-- [ ] Run the 22 assertions on production data and record results
-- [ ] Measure data latency and monthly cost (queries in [`orchestration/sql/`](orchestration/sql/))
-- [ ] Document the exact schedule times, alert and access setup, with screenshots in [`docs/proof-of-running/`](docs/proof-of-running/)
-- [ ] Apply the connector improvements listed in [ingestion/README](ingestion/README.md#recommended-improvements-not-yet-applied-test-in-connector-builder-first)
-
----
-
-## Reproduce from scratch
-
-1. **GCP:** create datasets `dw_rework_crm` (raw), `dm_rework_crm_view` (staging), `dm_rework_crm` (mart).
-2. **Airbyte:** import [`rework-crm-connector.yaml`](ingestion/airbyte/rework-crm-connector.yaml) in the Connector Builder, add credentials, and create a BigQuery connection ([details](ingestion/README.md#reproduce)).
-3. **Staff sheet:** create the external table `dw_rework_crm.user` from the Google Sheet.
-4. **Dataform:** set `defaultProject` in `transform/workflow_settings.yaml`, then `dataform compile` → `dataform run` ([details](transform/README.md#run-it)).
-5. **Power BI:** connect to the `dm_rework_crm` dataset and apply the definitions in [metric-definitions.md](docs/metric-definitions.md).
-
----
-
 ## Repository structure
 
 ```text
@@ -153,4 +119,7 @@ crm-data-warehouse/
 
 ## Data privacy
 
-Based on real company data. This repository contains **code, configuration and documentation only**: no customer records, no credentials (connector values are placeholders), no GCP project ID, and no revenue values. Contact email and phone are not included in the schema that AI-assisted analysis is allowed to query.
+The problem and the system are real: this pipeline runs on the company's CRM data every day. **The data in this repository is not.**
+
+- All data rows in this repo are **randomly generated demo data** ([`demo/`](demo/)), with the same tables, columns and labels as the real mart.
+- No customer records, credentials (connector values are placeholders), GCP project ID or revenue values.
