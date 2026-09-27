@@ -75,19 +75,6 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 
 ---
 
-## Case study in numbers
-
-| | |
-|---|---|
-| Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
-| Tables | **10** raw (8 Airbyte + 2 Google Sheets) → **6** staging views → **8** mart tables |
-| Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
-| Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
-| Data latency | *to be measured* |
-| Monthly cost | *to be measured* |
-
----
-
 ## Repository structure
 
 ```text
