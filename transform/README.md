@@ -7,7 +7,7 @@ transform/
 ├── workflow_settings.yaml        # project defaults + vars (freshness threshold, orphan tolerance)
 ├── includes/constants.js         # business constants (test deal IDs)
 └── definitions/
-    ├── declarations/             # raw sources: 7 Airbyte tables + staff Google Sheet
+    ├── declarations/             # sources: 6 Airbyte tables + 2 Google Sheets (staff, class schedule)
     ├── staging/   (6 views)      # clean, decode, pivot custom fields, dedupe, reconcile Pipedrive history
     ├── marts/     (7 tables)     # fact_deal, fact_deal_activity, dim_contact (SCD2), dim_account, dim_pipeline, dim_stage, dim_user
     ├── monitoring/               # mon_custom_field_registry (schema-change detection)
@@ -33,7 +33,7 @@ transform/
 - **SCD Type 2 (`dim_contact`):** a new version is inserted when `job_title` or `location` changes. A post-operation closes the previous version (`end_date`, `is_current = FALSE`). `fact_deal` joins the contact version valid at the deal's `created_at`.
 - **Test deals** are flagged (`is_test_deal`), not deleted, so they stay traceable but are excluded from metrics.
 
-## Data tests (22 assertions)
+## Data tests (23 assertions)
 
 Defined and compiled; not yet run on production data.
 
@@ -47,6 +47,7 @@ Defined and compiled; not yet run on production data.
 | SCD2 | `assert_scd2_one_current_version` | exactly one current version per contact, no overlapping periods |
 | Freshness | `assert_source_freshness` | raw data extracted within `freshness_max_hours` |
 | Schema change | `assert_new_custom_fields` | no unmapped CRM custom field appeared since the last run |
+| Class schedule | `assert_class_schedule_valid` | unique `class_code`, no missing `class_start_date` in the Sales-maintained sheet |
 
 A failing assertion fails the workflow run.
 

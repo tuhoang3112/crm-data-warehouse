@@ -155,6 +155,6 @@ The review covers:
 3. High-null columns
 4. Low-value fields
 5. SCD Type 2 validation
-6. Automated data-quality controls: now implemented as Dataform assertions (see [transform/](../transform/README.md#data-tests-22-assertions))
+6. Automated data-quality controls: now implemented as Dataform assertions (see [transform/](../transform/README.md#data-tests-23-assertions))
 
 → [View the full Data Quality Review](./data-quality-review.pdf)

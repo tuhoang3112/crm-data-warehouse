@@ -1,11 +1,12 @@
 # Ingestion
 
-Two sources land in the BigQuery raw dataset `dw_rework_crm`:
+Three sources land in BigQuery:
 
 | # | Source | Method | Type | Raw tables |
 |---|---|---|---|---|
 | 1 | **Rework CRM** (REST API) | Custom **Airbyte** connector built with the Low-code Connector Builder ([`airbyte/rework-crm-connector.yaml`](./airbyte/rework-crm-connector.yaml)) | API | `deal`, `deal_activities`, `contact`, `account`, `pipeline`, `stage`, `contact_service`, `account_services` |
 | 2 | **Staff list** (internal Google Sheet) | **BigQuery external table** on Google Sheets, the native connector with no extra infrastructure | Built-in connector | `user` |
+| 3 | **Class schedule** (Google Sheet filled in by Sales) | **BigQuery external table** on Google Sheets | Built-in connector | `dm_rework_crm.dim_class_schedule` |
 
 Airbyte runs self-hosted (Docker) on a GCP Compute Engine VM that is switched on around the sync (see [`../orchestration/`](../orchestration/)).
 
