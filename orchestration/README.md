@@ -36,10 +36,3 @@ Based on how the models are built:
 | Raw data missing for a period | Airbyte → connection → refresh/reset the affected stream, then run Dataform. Incremental streams (`deal`, `contact`) restart from `start_datetime` in the connector (`2025-06-01`) |
 | New custom field needs history | Nothing extra: the raw `form` JSON is kept, so adding the field to the staging pivot fills it for all records |
 | `dim_contact` (SCD2, incremental) | ⚠️ A *full refresh* rebuilds it from the current snapshot and **deletes all historical contact versions**. Only do this on purpose |
-
-## To document
-
-- [ ] Exact times of each step (the pipeline starts at 12:00 daily)
-- [ ] Alert setup (failed sync / failed run / late data)
-- [ ] Access control setup
-- [ ] Cost control setup and monthly cost
