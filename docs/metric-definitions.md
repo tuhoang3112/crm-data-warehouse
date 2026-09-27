@@ -1,7 +1,7 @@
 # Metric Definitions
 
 One agreed definition per metric, so Sales, Marketing and Customer Service read the same number.
-This document is also the context given to AI-assisted analysis, so an AI answer uses the same definitions as the dashboard.
+It is also intended as the context for AI-assisted analysis, so an AI answer uses the same definitions as the dashboard.
 
 > **How this differs from the [Data Dictionary](./data-dictionary.md):** the dictionary describes **columns** (what a field contains). This document describes **metrics**: how a number is calculated, from which tables, for whom, and how it is commonly misread.
 
@@ -68,7 +68,7 @@ Each level = previous level − deals that "failed" at that level. A deal fails 
 | **Variants** | *Win rate LP*: same formula on the previous period of equal length. *Win rate LY*: same period last year |
 
 **Common misreadings**
-- ❌ `won / (won + lost)`. That is **close rate**, not win rate, and it is always higher because open deals are ignored. This is the #1 reason two teams have reported different win rates.
+- ❌ `won / (won + lost)`. That is **close rate**, not win rate, and it is always higher because open deals are ignored.
 - ❌ Comparing the current month's win rate with an old month. Recent months still have many **open** deals, so their win rate rises over time. Compare cohorts of the same age, or wait until most deals are closed.
 - ❌ **Win rate by course including "Combo" courses.** The course field is often switched to a Combo **after** a successful upsell, which inflates Combo win rates. Exclude Combo courses from the main course comparison.
 - ❌ **Win rate by channel including `utm_medium = 'inbox'`** (or `utm_source` `inbox`/`zalo`). These tags are added by Sales **after** the deal is won (survivorship bias), so they show ~100% win rate. Exclude them from channel comparisons, or show them with a warning.
@@ -113,12 +113,9 @@ Each level = previous level − deals that "failed" at that level. A deal fails 
 
 **How `deal_value` is built (in `stg_deal`):** `COALESCE(pipedrive_product_amount, NULLIF(rework_value, 0))`. Migrated deals use the original Pipedrive amount; Rework-native deals use the Rework deal value, and `0` is treated as "not entered".
 
-**Used by:** Sales Manager, management.
-
 **Common misreadings**
-- ❌ Treating `deal_value` as cash collected. It is the **deal value recorded in the CRM**, not a payment, invoice or accounting revenue. Discounts, refunds and instalments are not reflected.
+- ❌ Treating `deal_value` as payment data. It is the **deal value recorded in the CRM**.
 - ❌ Averaging over all won deals, including those with no value. Deals with `NULL` value would pull the average down. Check the share of won deals with a value before trusting the number.
-- ❌ Comparing revenue before and after the migration without checking coverage. Pipedrive amounts and Rework values were entered under different processes.
 
 > **Privacy:** revenue values are never published in this repository or in public screenshots.
 
@@ -128,14 +125,11 @@ Each level = previous level − deals that "failed" at that level. A deal fails 
 
 | Metric | Formula | Source | Used by |
 |---|---|---|---|
-| **Deal cycle time (days)** | `DATE_DIFF(closed_at, created_at, DAY)` for closed deals | `fact_deal` | Sales Manager |
-| **Time in stage (days)** | Time between consecutive stage-change events of a deal | `fact_deal_activity` (changelog activities) | Sales Manager |
-| **Avg. stages per deal** | Distinct stages a deal passed through | `fact_deal_activity` (changelog) | Sales Manager |
-| **First response time** | First activity `created_at` − deal `created_at` | `fact_deal_activity` ⋈ `fact_deal` | Marketing, Sales Manager |
-| **Avg. leads per day / week** | Lead count / number of days (weeks) in the selected period | `fact_deal` | Marketing |
+| **First response time** | First activity `created_at` − deal `created_at` | `fact_deal_activity` ⋈ `fact_deal` | Marketing |
+| Deal duration, stage duration | *To be documented from the Power BI measures* | `fact_deal`, `fact_deal_activity` | Sales Manager |
 
 **Common misreadings**
-- ❌ Cycle time on migrated deals. Use `created_at >= 2026-01-01` (G3).
+- ❌ Speed metrics on migrated deals. Use `created_at >= 2026-01-01` (G3).
 - ❌ Reading high weekday volume or late-night lead creation as a system/batch error. It is real customer behaviour.
 
 ---

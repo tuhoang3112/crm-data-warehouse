@@ -35,6 +35,8 @@ transform/
 
 ## Data tests (22 assertions)
 
+Defined and compiled; not yet run on production data.
+
 | Type | Where | Checks |
 |---|---|---|
 | Uniqueness | every mart table (`uniqueKey`) | `deal_id`, `activity_id`, `contact_key`, `account_id`, `pipeline_id`, `stage_id`, `user_id` |
@@ -46,7 +48,7 @@ transform/
 | Freshness | `assert_source_freshness` | raw data extracted within `freshness_max_hours` |
 | Schema change | `assert_new_custom_fields` | no unmapped CRM custom field appeared since the last run |
 
-A failing assertion fails the workflow run, which triggers the alert (see [`../orchestration/`](../orchestration/)).
+A failing assertion fails the workflow run.
 
 Known and **accepted** data issues are documented rather than asserted, so the pipeline does not fail every week for a known business behaviour. Example: `dim_contact.account_id = 0` means "contact without a company". See [`../docs/data-dictionary.md`](../docs/data-dictionary.md).
 
