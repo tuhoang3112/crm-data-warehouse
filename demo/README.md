@@ -39,6 +39,11 @@ Labels that Power BI measures filter on must match the real mart **exactly**. Pi
 - The data is fake, so you can use **Publish to web** for a public link, or export screenshots without blurring.
 - Label the report clearly, e.g. a text box: *"Demo data - randomly generated"*.
 
-## Known limitation
+## Changelog format
 
-Changelog rows (`activity_type = "Thay đổi hệ thống"`) follow the real pattern `<user> <action> of deal <deal name>`, and deal names follow `<contact> - <course> - <ONL/OFF>`. The wording of **stage-change** rows is still a placeholder (`<user> moved stage from <A> to <B> of deal <deal name>`) until a real example is confirmed, so stage-duration charts that parse this text may not work yet.
+Changelog rows (`activity_type = "Thay đổi hệ thống"`) follow the real patterns:
+
+- `<user> set <contact> as primary contact of deal <deal name>`
+- `<user> move deal <deal name> to pipeline <pipeline> with stage <stage>`, where `|` in the pipeline name is stored as `&#124;`, exactly as in the mart
+
+Deal names follow `<contact> - <course> - <ONL/OFF>`. Nurturing deals first move through Sales stages, then get moved to the Nurturing pipeline.

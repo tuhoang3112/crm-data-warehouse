@@ -261,30 +261,38 @@ def main(n_deals):
         if pid == NURTURING:  # parked leads waiting for a later class
             status = "open" if rng.random() < 0.7 else "lost"
 
-        # How far the deal progressed through the stages
+        # How far the deal progressed: a path of (pipeline_id, stage) steps
         last = len(stages) - 1
-        if status == "won":
-            reached = last
+        if pid == NURTURING:
+            # Nurturing deals start in the Sales pipeline, then get parked
+            sales_stages = [n for _, n in PIPELINES[SALES][1]]
+            path = [(SALES, n) for n in sales_stages[:rng.randint(2, 5)]]
+            path.append((NURTURING, rng.choice(stages[:3])))
         else:
-            weights = [max(1, 6 - i) for i in range(last)]
-            reached = rng.choices(range(last), weights=weights)[0]
-        stage = stages[reached]
+            if status == "won":
+                reached = last
+            else:
+                weights = [max(1, 6 - i) for i in range(last)]
+                reached = rng.choices(range(last), weights=weights)[0]
+            path = [(pid, n) for n in stages[:reached + 1]]
+        stage = path[-1][1]
 
         # Changelog ("Thay đổi hệ thống") uses the real pattern
         # "<user> <action> of deal <deal name>"
         add_activity(deal_id, owner, created + timedelta(minutes=rng.randint(1, 30)), "Thay đổi hệ thống",
-                     f"{owner_name} set {version['contact_name']} as primary contact of deal {deal_name}")
+                     f" {owner_name} set {version['contact_name']} as primary contact of deal {deal_name} ")
 
         # Stage history as changelog activities, and a cycle time
         t = created
-        for i in range(reached + 1):
+        for i, (step_pid, step_stage) in enumerate(path):
             if i > 0:
                 t += timedelta(days=rng.expovariate(1 / 4.0), hours=rng.randint(1, 8))
                 if t > now:
                     t = now - timedelta(hours=1)
                 add_activity(deal_id, owner, t, "Thay đổi hệ thống",
-                             # PLACEHOLDER wording for stage changes - replace with the real one
-                             f"{owner_name} moved stage from {stages[i-1]} to {stages[i]} of deal {deal_name}")
+                             # Real wording; "|" is stored HTML-encoded as "&#124;" in the mart
+                             f" {owner_name} move deal {deal_name} to pipeline "
+                             f"{PIPELINES[step_pid][0].replace('|', '&#124;')} with stage {step_stage} ")
             if rng.random() < 0.7:
                 add_activity(deal_id, owner, t + timedelta(hours=rng.randint(1, 30)),
                              rng.choices(["Ghi chú", "Nhật ký hoạt động", "File"], weights=[90, 9, 1])[0],
