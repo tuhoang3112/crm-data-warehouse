@@ -15,7 +15,7 @@ transform/
 
 | Layer | Dataset | Materialization | Purpose |
 |---|---|---|---|
-| Raw | `dw_rework_crm` | Airbyte tables + Sheets external table | Untouched source data, full history |
+| Raw | `dw_rework_crm` | Airbyte tables + Google Sheets external tables | Untouched source data, full history |
 | Staging | `dm_rework_crm_view` | **Views** | Always reflects the latest raw data; no storage cost |
 | Mart | `dm_rework_crm` | **Tables** (full rebuild), `dim_contact` **incremental** | Fast, stable tables for Power BI |
 

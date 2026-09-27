@@ -21,7 +21,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 
 | Decision | Choice | Why |
 |---|---|---|
-| **Warehouse** | **BigQuery** | Already used by the company. The staff Google Sheet connects natively as an external table, and Dataform runs inside BigQuery |
+| **Warehouse** | **BigQuery** | Already used by the company. Google Sheets (staff list, class schedule) connect natively as external tables, and Dataform runs inside BigQuery |
 | **ETL or ELT** | **ELT** | Raw CRM data (including nested JSON custom fields) is loaded as-is, and all transformation is done in SQL with Dataform. Because staging models are views and marts are rebuilt in full, a logic change is re-applied to all history without re-extracting |
 | **Data Lake** | **Not needed** | All sources are structured tables. There are no files or unstructured data to store |
 | **Data Mart** | **Yes** | Power BI reads clean fact and dimension tables instead of raw API data |
@@ -51,7 +51,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 | Table | Grain | Notes |
 |---|---|---|
 | `fact_deal` | 1 row per deal | Status, stage, owner, **deal value (revenue)**, course, attribution (UTM), Pipedrive-reconciled dates |
-| `fact_deal_activity` | 1 row per activity | Notes, calls, emails, changelog |
+| `fact_deal_activity` | 1 row per activity | Notes, system changelog (stage/pipeline moves, contact changes), activity logs, files |
 | `dim_contact` | 1 row per contact **version** | **SCD Type 2** on `job_title`, `location`. Deals join the version valid at deal creation |
 | `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage` | 1 row per entity | `dim_user` comes from the staff Google Sheet |
 | `dim_class_schedule` | 1 row per class | Class code, start date, course, from the class-schedule Google Sheet |
@@ -106,7 +106,7 @@ crm-data-warehouse/
     ├── data-quality-review.pdf
     ├── testing-validation.md   # dashboard reconciliation
     ├── project-requirements.md
-    └── proof-of-running/       # screenshots of runs, tests, alerts
+    └── proof-of-running/       # screenshots of the running pipeline
 ```
 
 ## Data privacy

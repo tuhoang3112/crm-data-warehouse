@@ -232,7 +232,7 @@ def main(n_deals):
         nonlocal act_id
         act_id += 1
         fact_activity.append({"activity_id": act_id, "deal_id": deal_id, "activity_type": a_type,
-                              "activity_content": content, "owner_user_id": owner,
+                              "activity_content": content, "activity_owner_user_id": owner,
                               "created_at": when, "updated_at": when})
 
     for deal_id in range(10_001, 10_001 + n_deals):
@@ -356,7 +356,7 @@ def main(n_deals):
         "utm_medium", "utm_content", "utm_product", "utm_person", "created_at", "updated_at",
         "closed_at"])
     write_csv("fact_deal_activity", fact_activity, [
-        "activity_id", "deal_id", "activity_type", "activity_content", "owner_user_id",
+        "activity_id", "deal_id", "activity_type", "activity_content", "activity_owner_user_id",
         "created_at", "updated_at"])
 
 
