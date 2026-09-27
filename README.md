@@ -4,6 +4,8 @@
 
 ![Architecture](docs/architecture.png)
 
+**[▶ Open the live Power BI dashboard](https://app.powerbi.com/view?r=eyJrIjoiNDJhMjkyMTctMzY4NS00MWFmLWJhNzgtNDE4OGZhMjY1ZTIzIiwidCI6ImM3NzhlYjg3LWUxODgtNDIwMi04OGRkLTIwNDAyMDk3YjA0ZSIsImMiOjEwfQ%3D%3D)** (demo data, randomly generated)
+
 ---
 
 ## The problem
