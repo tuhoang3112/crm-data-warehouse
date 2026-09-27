@@ -36,8 +36,8 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 | Source | Method |
 |---|---|
 | **Rework CRM API**: deals, activities, contacts, accounts, pipelines, stages, services (8 streams) | Custom Airbyte connector ([YAML](ingestion/airbyte/rework-crm-connector.yaml)). `deal` and `contact` sync incrementally on `last_update`; the other streams are full refresh |
-| **Staff Google Sheet** | BigQuery external table |
-| **Class schedule** (Google Sheet filled in by Sales) | BigQuery external table `course_schedule`, modeled into `dim_class_schedule` (class ID, class code, class start date, course) |
+| **Staff Google Sheet**: user ID, name, job title (maintained by hand) | BigQuery external table `user`, modeled into `dim_user` |
+| **Class schedule Google Sheet**: class ID, class code, start date, course (filled in by Sales) | BigQuery external table `course_schedule`, modeled into `dim_class_schedule` |
 
 Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`).
 → [ingestion/README](ingestion/README.md)
@@ -53,8 +53,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 | `fact_deal` | 1 row per deal | Status, stage, owner, **deal value (revenue)**, course, attribution (UTM), Pipedrive-reconciled dates |
 | `fact_deal_activity` | 1 row per activity | Notes, system changelog (stage/pipeline moves, contact changes), activity logs, files |
 | `dim_contact` | 1 row per contact **version** | **SCD Type 2** on `job_title`, `location`. Deals join the version valid at deal creation |
-| `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage` | 1 row per entity | `dim_user` comes from the staff Google Sheet |
-| `dim_class_schedule` | 1 row per class | Class code, start date, course, from the class-schedule Google Sheet |
+| `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage`, `dim_class_schedule` | 1 row per entity | `dim_user` and `dim_class_schedule` come from Google Sheets (staff list, class schedule) |
 
 → [Data Dictionary](docs/data-dictionary.md) (columns) · [Metric Definitions](docs/metric-definitions.md) (metrics)
 
@@ -73,19 +72,6 @@ Before the dashboard was built, a [Data Quality Review](docs/data-quality-review
 
 Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform production run → **Power BI scheduled refresh** (after Dataform finishes).
 → [orchestration/README](orchestration/README.md)
-
----
-
-## Case study in numbers
-
-| | |
-|---|---|
-| Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
-| Tables | **10** raw (8 Airbyte + 2 Google Sheets) → **6** staging views → **8** mart tables |
-| Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
-| Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
-| Data latency | *to be measured* |
-| Monthly cost | *to be measured* |
 
 ---
 

@@ -7,23 +7,9 @@ It is also intended as the context for AI-assisted analysis, so an AI answer use
 
 ---
 
-## 0. Global rules (apply to every metric)
-
-| # | Rule | Why |
-|---|---|---|
-| G1 | **Test deals** are marked lost in the CRM with `lost_reason = 'Trash: Đăng ký trùng deal'` | Internal deals created while testing the CRM. They share this lost reason with real duplicate registrations, so both are removed together at the Lead level of the funnel (section 1) |
-| G2 | **Time bucketing uses `fact_deal.created_at`** (deal creation date), never `closed_at` / `updated_at` | A deal created in June and won in October is a "June deal" in every trend chart. Name charts "Win rate by **created** month" to avoid ambiguity |
-| G3 | **Operational KPIs use `created_at >= 2026-01-01`.** Data-quality checks use full history | Records before 2026 were migrated from Pipedrive, and many already had outcomes at migration time. Full-history win rate (~55%) vs 2026 (~37%) is not a contradiction: they answer different questions |
-| G4 | **Never compare pipelines directly.** Report *Sales Prospecting*, *CS Retention* and *B2B* separately | Different processes and populations. B2B win rate is ~95% on a small volume, and merging it distorts every other number |
-| G5 | **Nurturing Pipeline is not a separate pipeline.** Its deals are merged into *Sales Prospecting* | It was used to "park" leads waiting for the next class |
-| G6 | **Empty string, `NULL` and `"unknown"` are one group** ("no data") when counting or grouping | Otherwise one real answer shows up as 3–4 categories |
-| G7 | **Merge equivalent labels before grouping:** `utm_medium` `fanpage` = `fanpage_tm`; `utm_source` `activecampaign` = `email`; renamed courses count as one course | Historical naming changes |
-
----
-
 ## 1. Lead funnel
 
-**Scope:** *Sales | Prospecting Pipeline* only (incl. Nurturing, per G5). Not applicable to CS Retention or B2B.
+**Scope:** *Sales | Prospecting Pipeline* only (incl. Nurturing Pipeline deals, which are merged into it). Not applicable to CS Retention or B2B.
 **Source:** `fact_deal` ⋈ `dim_stage` ⋈ `dim_pipeline`
 **Used by:** Marketing (lead quality by channel/course), Sales Manager (funnel bottlenecks)
 
@@ -129,7 +115,7 @@ Each level = previous level − deals that "failed" at that level. A deal fails 
 | Deal duration, stage duration | *To be documented from the Power BI measures* | `fact_deal`, `fact_deal_activity` | Sales Manager |
 
 **Common misreadings**
-- ❌ Speed metrics on migrated deals. Use `created_at >= 2026-01-01` (G3).
+- ❌ Speed metrics on migrated deals. Use `created_at >= 2026-01-01`; earlier records were migrated from Pipedrive.
 - ❌ Reading high weekday volume or late-night lead creation as a system/batch error. It is real customer behaviour.
 
 ---
