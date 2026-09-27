@@ -16,7 +16,7 @@ python demo/generate_demo_data.py --deals 8000
 Output: `demo/data/*.csv`, one file per table:
 `fact_deal`, `fact_deal_activity`, `dim_contact`, `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage`, `dim_class_schedule`.
 
-**Before generating**, check the lists at the top of the script (`PIPELINES`, stage names, `LOST_REASONS_BY_STAGE`, `COURSES`, `CHANNELS`). Any value a Power BI measure filters on (e.g. a stage name or pipeline name) must be spelled **exactly** as in the real data, or that measure will return blank.
+Labels that Power BI measures filter on must match the real mart **exactly**. Pipeline names, Sales-pipeline stages, activity types and lost reasons are taken from the real mart. Stages of the CS, B2B and Nurturing pipelines are still **placeholders** (marked in the script) until they are replaced with the real list. Course names, prices, people and companies are intentionally fake.
 
 ## 2. Load into Power BI
 
@@ -41,4 +41,4 @@ Output: `demo/data/*.csv`, one file per table:
 
 ## Known limitation
 
-Stage-duration charts depend on how the real report reads stage changes from `fact_deal_activity`. The fake changelog rows use `activity_type = "Thay đổi hệ thống"` and content `Stage changed: <from> → <to>`. If your DAX parses a different format, adjust `add_activity(...)` in the script.
+Stage-duration charts depend on how the real report reads stage changes from `fact_deal_activity`. The fake changelog rows use the real `activity_type = "Thay đổi hệ thống"`, but the content format `Stage changed: <from> → <to>` is a placeholder until the real format is confirmed.

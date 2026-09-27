@@ -28,19 +28,23 @@ END_DATE = date(2026, 9, 27)
 OUT_DIR = Path(__file__).parent / "data"
 
 # ---------------------------------------------------------------------------
-# Reference data - edit these lists to match the labels your Power BI
-# measures filter on (stage names, pipeline names, lost reasons...).
+# Reference data - labels must match the real mart exactly, because Power BI
+# measures filter on them.
+#   Verified against the real mart: pipeline names, Sales pipeline stages,
+#   activity types, lost reasons.
+#   PLACEHOLDER (replace with the real values): stages of the CS, B2B and
+#   Nurturing pipelines.
 # ---------------------------------------------------------------------------
 
 PIPELINES = {
     1: ("Sales | Prospecting Pipeline", [
         "Lead In", "Interested", "Engaged", "Needs Exploration",
         "Solution Fit", "Ready To Purchase", "Payment Completion"]),
-    2: ("CS | Retention Pipeline", [
+    2: ("CS | Retention Pipeline", [  # PLACEHOLDER stages
         "Lead In", "Interested", "Engaged", "Ready To Purchase", "Payment Completion"]),
-    3: ("B2B pipeline", [
-        "Lead In", "Needs Exploration", "Proposal", "Negotiation", "Payment Completion"]),
-    4: ("Nurturing Pipeline", ["Timing Not Ready", "Re-Activated"]),
+    3: ("B2B pipeline", [  # PLACEHOLDER stages
+        "Lead In", "Needs Exploration", "Ready To Purchase", "Payment Completion"]),
+    4: ("Nurturing Pipeline", ["Timing Not Ready", "Re-Activated"]),  # PLACEHOLDER stages
 }
 PIPELINE_WEIGHTS = {1: 0.82, 2: 0.10, 3: 0.05, 4: 0.03}
 
@@ -81,8 +85,9 @@ CHANNELS = [
 ]
 
 STAFF = [
-    ("Sales Manager", 1), ("Sales Consultant", 5),
-    ("Customer Service Manager", 1), ("Customer Service", 2),
+    ("Sales Manager", 1), ("Sales Consultant", 3),
+    ("Customer Service Manager", 1), ("Customer Service", 3),
+    ("Marketing", 4),
 ]
 
 LAST_NAMES = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng",
@@ -155,7 +160,10 @@ def main(n_deals):
             name = fake_name(rng)
             dim_user.append({"user_id": uid, "username": f"user{uid}", "full_name": name,
                              "job_title": title, "email": f"user{uid}@example.com"})
-            (cs_ids if "Customer Service" in title else sales_ids).append(uid)
+            if "Customer Service" in title:
+                cs_ids.append(uid)
+            elif title.startswith("Sales"):
+                sales_ids.append(uid)
 
     # --- dim_account -----------------------------------------------------------
     dim_account = []
@@ -266,7 +274,7 @@ def main(n_deals):
                              f"Stage changed: {stages[i-1]} → {stages[i]}")
             if rng.random() < 0.7:
                 add_activity(deal_id, owner, t + timedelta(hours=rng.randint(1, 30)),
-                             rng.choice(["Cuộc gọi", "Ghi chú", "Email", "Nhật ký hoạt động"]),
+                             rng.choices(["Ghi chú", "Nhật ký hoạt động", "File"], weights=[90, 9, 1])[0],
                              "Demo activity")
         closed = None
         if status != "open":

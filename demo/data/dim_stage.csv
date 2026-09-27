@@ -13,8 +13,7 @@ stage_id,pipeline_id,stage_name
 112,2,Payment Completion
 113,3,Lead In
 114,3,Needs Exploration
-115,3,Proposal
-116,3,Negotiation
-117,3,Payment Completion
-118,4,Timing Not Ready
-119,4,Re-Activated
+115,3,Ready To Purchase
+116,3,Payment Completion
+117,4,Timing Not Ready
+118,4,Re-Activated

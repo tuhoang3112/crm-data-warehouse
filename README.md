@@ -50,7 +50,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 |---|---|
 | **Rework CRM API**: deals, activities, contacts, accounts, pipelines, stages, services (8 streams) | Custom Airbyte connector ([YAML](ingestion/airbyte/rework-crm-connector.yaml)). `deal` and `contact` sync incrementally on `last_update`; the other streams are full refresh |
 | **Staff Google Sheet** | BigQuery external table |
-| **Class schedule** (Excel, filled in by Sales) | Loaded into BigQuery as `dim_class_schedule`: class code, class start date, course. *Model code not yet in this repo* |
+| **Class schedule** (Google Sheet, filled in by Sales) | BigQuery external table → `dim_class_schedule`: class code, class start date, course. *Declaration not yet in this repo* |
 
 Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`), and `uniqueKey` assertions check every mart table.
 → [ingestion/README](ingestion/README.md)
@@ -99,7 +99,7 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 
 | | |
 |---|---|
-| Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Excel) |
+| Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
 | Tables | **9** raw → **6** staging views → **7** mart tables |
 | Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
 | Data tests | **22** assertions defined |
