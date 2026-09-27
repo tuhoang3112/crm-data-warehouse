@@ -5,7 +5,7 @@ defaultAssertionDataset: dataform_assertions
 dataformCoreVersion: 3.0.52
 
 vars:
-  # Sync runs weekly -> allow 7 days + 1 day buffer before flagging data as stale
-  freshness_max_hours: "192"
+  # Pipeline runs daily -> flag raw data as stale after 1 day + buffer
+  freshness_max_hours: "36"
   # Deals owned by staff missing from dim_user (people who left) - tolerated share
   max_owner_orphan_pct: "10"

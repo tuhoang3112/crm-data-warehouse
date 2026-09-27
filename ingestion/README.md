@@ -7,7 +7,7 @@ Two sources land in the BigQuery raw dataset `dw_rework_crm`:
 | 1 | **Rework CRM** (REST API) | Custom **Airbyte** connector built with the Low-code Connector Builder ([`airbyte/rework-crm-connector.yaml`](./airbyte/rework-crm-connector.yaml)) | API | `deal`, `deal_activities`, `contact`, `account`, `pipeline`, `stage`, `contact_service`, `account_services` |
 | 2 | **Staff list** (internal Google Sheet) | **BigQuery external table** on Google Sheets, the native connector with no extra infrastructure | Built-in connector | `user` |
 
-Airbyte runs self-hosted (Docker) on a small GCP Compute Engine VM that is only switched on during the sync window (see [`../orchestration/`](../orchestration/)).
+Airbyte runs self-hosted (Docker) on a GCP Compute Engine VM that is switched on around the sync (see [`../orchestration/`](../orchestration/)).
 
 ---
 
@@ -27,16 +27,16 @@ Airbyte runs self-hosted (Docker) on a small GCP Compute Engine VM that is only 
 
 | Stream | Rows (approx.) | Sync mode | Why |
 |---|---|---|---|
-| `deal` | ~25.6k | **Incremental** on `last_update` | Largest, changes daily |
-| `contact` | ~26.7k | **Incremental** on `last_update` | Large, changes rarely |
+| `deal` | ~25.6k | **Incremental** on `last_update` | Largest stream |
+| `contact` | ~26.7k | **Incremental** on `last_update` | Large stream |
 | `deal_activities` | ~54k activities | Substream of `deal` | See recommendation below |
-| `account` | ~30 | Full refresh | Tiny, so incremental adds complexity for no gain |
+| `account` | ~30 | Full refresh | Very small |
 | `pipeline`, `stage` | 4 / 24 | Full refresh | Reference data, tiny |
-| `contact_service`, `account_services` | small | Full refresh | Reference data |
+| `contact_service`, `account_services` | – | Full refresh | Reference data |
 
 ### Duplicate protection (two layers)
 
-1. **Raw:** incremental syncs append new versions of changed records, so the raw layer keeps history. Duplicates at this layer are expected.
+1. **Raw:** the same record can appear more than once (e.g. re-synced after an update).
 2. **Staging:** every `stg_*` model keeps only the latest version of each record:
    ```sql
    QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _airbyte_extracted_at DESC) = 1
@@ -51,7 +51,7 @@ These are written as recommendations rather than edits to the YAML, because the 
    ```yaml
    incremental_dependency: true
    ```
-   After that, activities are only fetched for deals whose `last_update` moved since the last sync. First check in Rework that adding a note/call/changelog updates the deal's `last_update`. This matters for the schedule too: the VM only stays up for about 30 minutes after the sync starts.
+   After that, activities are only fetched for deals whose `last_update` moved since the last sync. First check in Rework that adding a note/call/changelog updates the deal's `last_update`. This also shortens the sync, which matters because the VM is stopped on a schedule.
 2. **Declare `primary_key: id`** on `deal`, `contact`, `account`, `pipeline` and `stage`. Airbyte can then use *Incremental | Append + Deduped*, so the raw table stays small. Keep the `QUALIFY` in staging as a safety net.
 3. **Check the cursor request options.** In `deal` and `contact`, `start_time_option` and `end_time_option` both inject into the same body field (`last_update_stime`), so one value overwrites the other. Confirm in the Builder's request preview which value the API actually receives. If it is the end time, set `end_time_option` to a different field or remove it.
 
@@ -59,9 +59,9 @@ These are written as recommendations rather than edits to the YAML, because the 
 
 | Change in the CRM | What happens | How it is detected |
 |---|---|---|
-| **New custom field** (the common case) | Custom fields live inside the `form` JSON array, so the **raw schema does not change** and nothing breaks. The new field is simply not used until it is mapped in `stg_*` | `mon_custom_field_registry` + assertion `assert_new_custom_fields` fails on the run where a new field code first appears, which triggers the failure alert |
-| New top-level column | Airbyte (schema auto-import on) adds it to raw. Staging selects explicit columns, so nothing breaks | Visible in the Airbyte schema-change notification |
-| Column removed or renamed | Staging view fails to compile, the Dataform run fails, and the alert fires. The dashboard keeps the last good data (mart tables are only replaced on success) | Workflow-failure alert |
+| **New custom field** | Custom fields live inside the `form` JSON array, so the **raw schema does not change** and nothing breaks. The new field is simply not used until it is mapped in `stg_*` | `mon_custom_field_registry` + assertion `assert_new_custom_fields` fails the Dataform run where a new field code first appears |
+| New top-level column | Staging selects explicit columns, so the new column is ignored until it is added to the model | Airbyte connection schema settings |
+| Column removed or renamed | The staging view errors, so the Dataform run fails and downstream marts are not rebuilt (they keep the last good data) | Failed Dataform run |
 
 **Action when a new field appears:** add one line to the pivot in the matching staging model, e.g.
 `MAX(IF(code = 'custom_new_field', final_value, NULL)) AS new_field`.

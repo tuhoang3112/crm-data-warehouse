@@ -24,7 +24,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `owner_user_id` | Sales owner responsible for the deal | Validate FK relationship to `dim_user.user_id` |
 | `deal_name` | Name of the deal | Raw values are not included in public outputs |
 | `deal_status` | Deal status: `open`, `won`, or `lost` | Asserted: only these 3 values |
-| `deal_value` | Deal value (revenue recorded in the CRM). Migrated deals: original Pipedrive product amount; Rework deals: Rework deal value (`0` → NULL) | Not cash collected; values never published. See [Revenue](./metric-definitions.md#4-revenue) |
+| `deal_value` | Deal value (revenue recorded in the CRM). Migrated deals: original Pipedrive product amount; Rework deals: Rework deal value (`0` → NULL) | Values never published. See [Revenue](./metric-definitions.md#4-revenue) |
 | `labels` | CRM label (e.g. `lead cks`) | Manual tag, so coverage is incomplete |
 | `is_alumni` | Manual "returning customer" tag | Captures only a fraction of real alumni, see metric definitions §6.2 |
 | `group_registration` | Registered as a group | Review completeness |
@@ -80,7 +80,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `contact_id` | CRM Contact identifier | Validate business-key/version uniqueness |
 | `account_id` | Account associated with the Contact | `0` = contact without a company (expected). Report match rate with and without `0` |
 | `contact_name` | Contact name | Raw values are not included in public outputs |
-| `email`, `phone`, `facebook` | Contact details | **PII.** Not granted to the BI/AI access layer |
+| `email`, `phone`, `facebook` | Contact details | **PII.** Not in the schema AI-assisted analysis is allowed to query |
 | `date_of_birth` | Birth year as entered | ~26% empty, used only for age-group analysis |
 | `university` | University | Review completeness |
 | `location` | Contact location | Historical changes preserved through SCD2 |
@@ -138,7 +138,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `username` | CRM username | – |
 | `full_name` | Employee name | Raw values are not included in public outputs |
 | `job_title` | Employee job title | Drives team assignment (Sales / CS), so keep titles consistent in the source sheet |
-| `email` | Work email | **PII.** Not granted to the BI/AI access layer |
+| `email` | Work email | **PII** |
 
 > Source: internal Google Sheet exposed as a BigQuery external table.
 

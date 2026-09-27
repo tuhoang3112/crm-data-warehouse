@@ -19,7 +19,7 @@ h1{font-size:26px;margin-bottom:4px}
 .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:#1f2933;color:#fff;margin-left:6px;vertical-align:middle}
 </style></head><body>
 <h1>CRM Data System: Architecture <span class="tag">ELT</span></h1>
-<div class="sub">Extract &amp; load raw data as-is into BigQuery, then transform inside the warehouse with Dataform. Weekly batch, Sunday, Asia/Bangkok.</div>
+<div class="sub">Extract &amp; load raw data as-is into BigQuery, then transform inside the warehouse with Dataform. Daily batch.</div>
 <div class="row">
  <div class="col"><div class="lane">1 · Sources</div>
   <div class="box src grow"><b>Rework CRM</b><span>REST API (POST, token auth)<br>deals · activities · contacts<br>accounts · pipelines · stages<br><i>incl. migrated Pipedrive history in custom fields</i></span></div>
@@ -27,12 +27,12 @@ h1{font-size:26px;margin-bottom:4px}
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">2 · Ingestion</div>
-  <div class="box ing grow"><b>Airbyte (self-hosted)</b><span>Custom low-code connector<br>on GCE VM (Docker)<br>• pagination page/limit<br>• parent→child substreams<br>• incremental on <code>last_update</code><br>Sun 12:00</span></div>
+  <div class="box ing grow"><b>Airbyte (self-hosted)</b><span>Custom low-code connector<br>on GCE VM (Docker)<br>• pagination page/limit<br>• parent→child substreams<br>• incremental on <code>last_update</code></span></div>
   <div class="box ing"><b>BigQuery external table</b><span>Native Google Sheets connector<br>read live at query time</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">3 · Raw layer</div>
-  <div class="box raw grow"><b>BigQuery · dw_rework_crm</b><span>9 raw tables<br>source structure kept<br>nested JSON (<code>form</code> custom fields)<br>append history + <code>_airbyte_extracted_at</code></span></div>
+  <div class="box raw grow"><b>BigQuery · dw_rework_crm</b><span>9 raw tables<br>source structure kept<br>nested JSON (<code>form</code> custom fields)<br><code>_airbyte_extracted_at</code> per row</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col" style="flex:1.25"><div class="lane">4 · Transform (Dataform)</div>
@@ -42,18 +42,17 @@ h1{font-size:26px;margin-bottom:4px}
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">5 · Serving</div>
-  <div class="box mart grow"><b>BigQuery · dm_rework_crm</b><span>Validated data mart<br>least-privilege access<br>(no PII columns granted)</span></div>
+  <div class="box mart grow"><b>BigQuery · dm_rework_crm</b><span>Validated data mart<br>fact + dimension tables</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">6 · Consumers</div>
-  <div class="box bi grow"><b>Power BI</b><span>Sales pipeline dashboard<br>Sales Manager · Sales Admin<br>Marketing · CS</span></div>
-  <div class="box bi"><b>AI-assisted analysis</b><span>uses metric-definitions.md as context</span></div>
+  <div class="box bi grow"><b>Power BI</b><span>Sales pipeline dashboard<br>scheduled daily refresh<br>after Dataform</span></div>
+  <div class="box bi"><b>AI-assisted analysis</b><span>metric-definitions.md as shared definitions</span></div>
  </div>
 </div>
 <div class="ops">
- <div><b>⏰ Orchestration</b>Cloud Scheduler: VM on 11:50 / off 12:30 · systemd auto-starts Airbyte · Airbyte sync 12:00 · Dataform production release 14:00 · Power BI refresh</div>
- <div><b>🔔 Alerts</b>Airbyte failed-sync notification · Cloud Monitoring alert on failed Dataform run (incl. freshness &amp; new-field assertions)</div>
- <div><b>🔀 Dev → Prod</b>Git · Dataform workspace → <code>_dev</code> datasets · merge to <code>main</code> → production release</div>
- <div><b>💰 Cost &amp; access</b>VM ~40 min/week · BigQuery free tier · budget alert · per-service-account IAM</div>
+ <div><b>⏰ Daily orchestration</b>Cloud Scheduler starts the VM · systemd auto-starts Airbyte · Airbyte sync · VM stops · Dataform production release · Power BI scheduled refresh</div>
+ <div><b>🔁 Backfill</b>Staging = views, marts = full rebuild → logic changes re-apply to all history · Airbyte stream refresh for missing raw data</div>
+ <div><b>💰 Cost</b>Airbyte VM only runs around the sync instead of 24/7</div>
 </div>
 </body></html>
