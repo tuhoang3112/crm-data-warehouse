@@ -154,12 +154,13 @@ def main(n_deals):
             dim_stage.append({"stage_id": sid, "pipeline_id": pid, "stage_name": sname})
 
     # --- dim_user ------------------------------------------------------------
-    dim_user, sales_ids, cs_ids = [], [], []
+    dim_user, sales_ids, cs_ids, user_name = [], [], [], {}
     uid = 1000
     for title, count in STAFF:
         for _ in range(count):
             uid += 1
             name = fake_name(rng)
+            user_name[uid] = name
             dim_user.append({"user_id": uid, "username": f"user{uid}", "full_name": name,
                              "job_title": title, "email": f"user{uid}@example.com"})
             if "Customer Service" in title:
@@ -246,6 +247,10 @@ def main(n_deals):
                        and (v["end_date"] is None or created.date() < v["end_date"]))
         owner = rng.choice(cs_ids if pid == CS else sales_ids)
         course = rng.choices(course_names, weights=COURSE_WEIGHTS)[0]
+        fmt_code = rng.choice(["ONL", "OFF"])
+        # Same naming pattern as real deals: "<contact> - <course> - <ONL/OFF>"
+        deal_name = f"{version['contact_name']} - {course} - {fmt_code}"
+        owner_name = user_name[owner]
         age_days = (now - created).days
 
         # Outcome: recent deals are more likely to still be open
@@ -265,6 +270,11 @@ def main(n_deals):
             reached = rng.choices(range(last), weights=weights)[0]
         stage = stages[reached]
 
+        # Changelog ("Thay đổi hệ thống") uses the real pattern
+        # "<user> <action> of deal <deal name>"
+        add_activity(deal_id, owner, created + timedelta(minutes=rng.randint(1, 30)), "Thay đổi hệ thống",
+                     f"{owner_name} set {version['contact_name']} as primary contact of deal {deal_name}")
+
         # Stage history as changelog activities, and a cycle time
         t = created
         for i in range(reached + 1):
@@ -273,7 +283,8 @@ def main(n_deals):
                 if t > now:
                     t = now - timedelta(hours=1)
                 add_activity(deal_id, owner, t, "Thay đổi hệ thống",
-                             f"Stage changed: {stages[i-1]} → {stages[i]}")
+                             # PLACEHOLDER wording for stage changes - replace with the real one
+                             f"{owner_name} moved stage from {stages[i-1]} to {stages[i]} of deal {deal_name}")
             if rng.random() < 0.7:
                 add_activity(deal_id, owner, t + timedelta(hours=rng.randint(1, 30)),
                              rng.choices(["Ghi chú", "Nhật ký hoạt động", "File"], weights=[90, 9, 1])[0],
@@ -298,7 +309,7 @@ def main(n_deals):
         fact_deal.append({
             "deal_id": deal_id, "contact_key": version["contact_key"],
             "stage_id": stage_ids[(pid, stage)], "owner_user_id": owner,
-            "deal_name": f"Deal {deal_id}", "deal_status": status, "deal_value": value,
+            "deal_name": deal_name, "deal_status": status, "deal_value": value,
             "labels": "lead cks" if pid == SALES and status == "open" and rng.random() < 0.05 else None,
             "is_alumni": "Cựu học viên" if rng.random() < 0.03 else None,
             "group_registration": None, "course_selected": course,

@@ -41,4 +41,4 @@ Labels that Power BI measures filter on must match the real mart **exactly**. Pi
 
 ## Known limitation
 
-Stage-duration charts depend on how the real report reads stage changes from `fact_deal_activity`. The fake changelog rows use the real `activity_type = "Thay đổi hệ thống"`, but the content format `Stage changed: <from> → <to>` is a placeholder until the real format is confirmed.
+Changelog rows (`activity_type = "Thay đổi hệ thống"`) follow the real pattern `<user> <action> of deal <deal name>`, and deal names follow `<contact> - <course> - <ONL/OFF>`. The wording of **stage-change** rows is still a placeholder (`<user> moved stage from <A> to <B> of deal <deal name>`) until a real example is confirmed, so stage-duration charts that parse this text may not work yet.
