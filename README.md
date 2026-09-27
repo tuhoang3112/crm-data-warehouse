@@ -53,8 +53,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 | `fact_deal` | 1 row per deal | Status, stage, owner, **deal value (revenue)**, course, attribution (UTM), Pipedrive-reconciled dates |
 | `fact_deal_activity` | 1 row per activity | Notes, system changelog (stage/pipeline moves, contact changes), activity logs, files |
 | `dim_contact` | 1 row per contact **version** | **SCD Type 2** on `job_title`, `location`. Deals join the version valid at deal creation |
-| `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage` | 1 row per entity | `dim_user` comes from the staff Google Sheet |
-| `dim_class_schedule` | 1 row per class | Class code, start date, course, from the class-schedule Google Sheet |
+| `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage`, `dim_class_schedule` | 1 row per entity | `dim_user` and `dim_class_schedule` come from Google Sheets (staff list, class schedule) |
 
 → [Data Dictionary](docs/data-dictionary.md) (columns) · [Metric Definitions](docs/metric-definitions.md) (metrics)
 
