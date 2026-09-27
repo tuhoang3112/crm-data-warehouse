@@ -24,21 +24,21 @@ h1{font-size:26px;margin-bottom:4px}
  <div class="col"><div class="lane">1 · Sources</div>
   <div class="box src grow"><b>Rework CRM</b><span>REST API (POST, token auth)<br>deals · activities · contacts<br>accounts · pipelines · stages<br><i>incl. migrated Pipedrive history in custom fields</i></span></div>
   <div class="box src"><b>Staff Google Sheet</b><span>user ID · name · job title<br>(maintained by hand)</span></div>
+  <div class="box src"><b>Class schedule Google Sheet</b><span>class code · start date · course<br>(filled in by Sales)</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">2 · Ingestion</div>
   <div class="box ing grow"><b>Airbyte (self-hosted)</b><span>Custom low-code connector<br>on GCE VM (Docker)<br>• pagination page/limit<br>• parent→child substreams<br>• incremental on <code>last_update</code></span></div>
-  <div class="box ing"><b>BigQuery external table</b><span>Native Google Sheets connector<br>read live at query time</span></div>
+  <div class="box ing"><b>BigQuery external tables</b><span>Native Google Sheets connector<br>for both sheets<br>read live at query time</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">3 · Raw layer</div>
-  <div class="box raw grow"><b>BigQuery · dw_rework_crm</b><span>9 raw tables<br>source structure kept<br>nested JSON (<code>form</code> custom fields)<br><code>_airbyte_extracted_at</code> per row</span></div>
+  <div class="box raw grow"><b>BigQuery · dw_rework_crm</b><span>8 Airbyte tables<br>+ 2 Google Sheet tables<br>source structure kept<br>nested JSON (<code>form</code> custom fields)<br><code>_airbyte_extracted_at</code> per row</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col" style="flex:1.25"><div class="lane">4 · Transform (Dataform)</div>
   <div class="box tr"><b>Staging · 6 views</b><span>UNNEST + pivot custom fields · decode HTML/Base64<br>dedupe (QUALIFY) · Pipedrive date reconciliation</span></div>
-  <div class="box tr"><b>Mart · 7 tables</b><span>fact_deal · fact_deal_activity<br>dim_contact (SCD2) · dim_account · dim_user<br>dim_pipeline · dim_stage</span></div>
-  <div class="box tr"><b>22 data tests</b><span>unique · not null · FK · SCD2 · freshness · schema change</span></div>
+  <div class="box tr"><b>Mart · 8 tables</b><span>fact_deal · fact_deal_activity<br>dim_contact (SCD2) · dim_account<br>dim_user · dim_class_schedule<br>dim_pipeline · dim_stage</span></div>
  </div>
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">5 · Serving</div>
@@ -47,7 +47,7 @@ h1{font-size:26px;margin-bottom:4px}
  <div class="arrow">➜</div>
  <div class="col"><div class="lane">6 · Consumers</div>
   <div class="box bi grow"><b>Power BI</b><span>Sales pipeline dashboard<br>scheduled daily refresh<br>after Dataform</span></div>
-  <div class="box bi"><b>AI-assisted analysis</b><span>metric-definitions.md as shared definitions</span></div>
+  <div class="box bi"><b>AI reporting</b><span><i>next phase</i><br>auto weekly/monthly reports<br>· variance commentary<br>· anomaly flags<br>context: mart +<br>metric-definitions.md</span></div>
  </div>
 </div>
 <div class="ops">

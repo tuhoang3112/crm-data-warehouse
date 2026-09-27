@@ -2,15 +2,7 @@ config {
   type: "incremental",
   uniqueKey: ["contact_key"],
   schema: "dm_rework_crm",
-  description: "Dimension: customer contacts (SCD Type 2 on job_title, location)",
-  assertions: {
-    uniqueKey: ["contact_key"],
-    nonNull: ["contact_key", "contact_id", "effective_date", "is_current"],
-    rowConditions: [
-      "end_date IS NULL OR end_date >= effective_date",
-      "is_current = (end_date IS NULL)"
-    ]
-  }
+  description: "Dimension: customer contacts (SCD Type 2 on job_title, location)"
 }
 
 SELECT

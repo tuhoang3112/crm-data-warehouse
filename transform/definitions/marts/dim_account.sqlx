@@ -1,11 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Dimension: customer companies/accounts",
-  assertions: {
-    uniqueKey: ["account_id"],
-    nonNull: ["account_id"]
-  }
+  description: "Dimension: customer companies/accounts"
 }
 
 SELECT

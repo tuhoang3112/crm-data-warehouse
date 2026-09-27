@@ -1,0 +1,83 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CRM Data Mart ERD</title><style>
+*{box-sizing:border-box;margin:0}
+body{font-family:"DejaVu Sans",Arial,sans-serif;background:#fff;color:#1f2933;width:1600px;height:900px;position:relative}
+h1{position:absolute;left:40px;top:28px;font-size:24px}
+.sub{position:absolute;left:40px;top:62px;font-size:14px;color:#5b6770}
+.t{position:absolute;width:250px;border:2px solid var(--c);border-radius:8px;background:#fff;overflow:hidden;z-index:2}
+.t h2{font-size:14px;padding:7px 10px;background:var(--c);color:#fff;display:flex;justify-content:space-between}
+.t h2 small{font-weight:400;opacity:.85;font-size:11px}
+.r{display:flex;font-size:12px;line-height:19px;border-top:1px solid #e3e7eb;padding:0 8px}
+.r b{width:26px;font-size:10px;color:var(--c);flex:none}
+.r.new{background:#fff4d6}
+.fact{--c:#b4552d}.dim{--c:#1f6fb2}.scd{--c:#6b4fbb}.sheet{--c:#2c7a4b}
+svg{position:absolute;left:0;top:0;z-index:1}
+.legend{position:absolute;left:40px;bottom:26px;font-size:12px;color:#5b6770;display:flex;gap:22px;align-items:center}
+.legend span{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:6px}
+</style></head><body>
+<h1>CRM Data Mart: Data Model</h1>
+<div class="sub">BigQuery dataset dm_rework_crm · 2 facts + 6 dimensions · snowflaked branch dim_stage → dim_pipeline</div>
+<svg id="lines" width="1600" height="900"></svg>
+<div id="tables"></div>
+<div class="legend">
+ <div><span style="background:#b4552d"></span>Fact</div>
+ <div><span style="background:#1f6fb2"></span>Dimension</div>
+ <div><span style="background:#6b4fbb"></span>SCD Type 2</div>
+ <div><span style="background:#2c7a4b"></span>From Google Sheet</div>
+ <div><span style="background:#fff4d6;border:1px solid #e0c56e"></span>Added column</div>
+ <div>1 ─── N : one-to-many</div>
+</div>
+<script>
+const T = {
+ dim_user:{cls:'sheet',x:40,y:170,note:'staff sheet',cols:[['PK','user_id'],'username','full_name','job_title','email']},
+ fact_deal_activity:{cls:'fact',x:40,y:420,cols:[['PK','activity_id'],['FK','deal_id'],['FK','activity_owner_user_id'],'activity_type','activity_content','created_at','updated_at']},
+ dim_class_schedule:{cls:'sheet',x:40,y:690,note:'class sheet',cols:[['PK','class_id'],'class_code','class_start_date','course']},
+ fact_deal:{cls:'fact',x:420,y:110,cols:[['PK','deal_id'],['FK','contact_key'],['FK','stage_id'],['FK','owner_user_id'],'deal_name','deal_status',['','deal_value','new'],'labels','is_alumni','group_registration','course_selected','learning_format',['FK','class_code'],'expectation','promotion_code','gift','need_consulting','preferred_consulting_time','pain_point_captured','pending_reason','pending_reason_detail','has_followup_plan','next_step','lost_reason','lost_reason_detail','utm_source','utm_medium','utm_content','utm_product','utm_person','created_at','updated_at','closed_at']},
+ dim_contact:{cls:'scd',x:830,y:110,note:'SCD2',cols:[['PK','contact_key'],'contact_id',['FK','account_id'],'contact_name','email','phone','date_of_birth','facebook','university','location','job_title','created_at','effective_date','end_date','is_current']},
+ dim_account:{cls:'dim',x:1240,y:110,cols:[['PK','account_id'],'account_name','account_address','account_description','brand_name','industry','website','linkedin_profile','company_size','created_at','updated_at']},
+ dim_stage:{cls:'dim',x:830,y:620,cols:[['PK','stage_id'],['FK','pipeline_id'],'stage_name']},
+ dim_pipeline:{cls:'dim',x:1240,y:620,cols:[['PK','pipeline_id'],'pipeline_name','pipeline_content']},
+};
+const root=document.getElementById('tables');
+for(const [name,t] of Object.entries(T)){
+ const d=document.createElement('div');d.className='t '+t.cls;d.id=name;d.style.left=t.x+'px';d.style.top=t.y+'px';
+ d.innerHTML='<h2>'+name+(t.note?'<small>'+t.note+'</small>':'')+'</h2>'+t.cols.map(c=>{
+   const [k,n,flag]=Array.isArray(c)?c:['',c];
+   return '<div class="r'+(flag?' '+flag:'')+'" data-col="'+n+'"><b>'+k+'</b>'+n+'</div>'}).join('');
+ root.appendChild(d);
+}
+function pt(tbl,col,side){
+ const r=document.querySelector('#'+tbl+' [data-col="'+col+'"]').getBoundingClientRect();
+ return {x: side==='r'? r.right : r.left, y: r.top + r.height/2};
+}
+// [from table, col, side] (many) -> [to table, col, side] (one)
+const rel=[
+ ['fact_deal','contact_key','r','dim_contact','contact_key','l'],
+ ['fact_deal','stage_id','r','dim_stage','stage_id','l'],
+ ['fact_deal','owner_user_id','l','dim_user','user_id','r',395],
+ ['fact_deal','class_code','l','dim_class_schedule','class_code','r',335],
+ ['fact_deal_activity','deal_id','r','fact_deal','deal_id','l',365],
+ ['fact_deal_activity','activity_owner_user_id','r','dim_user','user_id','r',310],
+ ['dim_contact','account_id','r','dim_account','account_id','l'],
+ ['dim_stage','pipeline_id','r','dim_pipeline','pipeline_id','l'],
+];
+const svg=document.getElementById('lines');let out='';
+rel.forEach(([a,ac,as,b,bc,bs,lane],i)=>{
+ const p=pt(a,ac,as), q=pt(b,bc,bs);
+ let d;
+ if(lane){
+   d=`M${p.x},${p.y} H${lane} V${q.y} H${q.x}`;
+ } else if(as===bs){ // loop out on the same side
+   const x=Math.max(p.x,q.x)+30+i*6;
+   d=`M${p.x},${p.y} H${x} V${q.y} H${q.x}`;
+ } else {
+   const mx=(p.x+q.x)/2 + (i%3-1)*10;
+   d=`M${p.x},${p.y} H${mx} V${q.y} H${q.x}`;
+ }
+ out+=`<path d="${d}" fill="none" stroke="#8795a1" stroke-width="1.6"/>`;
+ const lab=(x,y,t,dir)=>`<text x="${x+(dir==='r'?6:-6)}" y="${y-4}" font-size="12" font-weight="700" fill="#3e4c59" text-anchor="${dir==='r'?'start':'end'}">${t}</text>`;
+ out+=lab(p.x,p.y,'N',as)+lab(q.x,q.y,'1',bs);
+});
+svg.innerHTML=out;
+</script>
+</body></html>

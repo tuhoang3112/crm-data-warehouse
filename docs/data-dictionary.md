@@ -23,7 +23,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `stage_id` | Current Sales stage | Validate FK relationship to `dim_stage.stage_id` |
 | `owner_user_id` | Sales owner responsible for the deal | Validate FK relationship to `dim_user.user_id` |
 | `deal_name` | Name of the deal | Raw values are not included in public outputs |
-| `deal_status` | Deal status: `open`, `won`, or `lost` | Asserted: only these 3 values |
+| `deal_status` | Deal status: `open`, `won`, or `lost` | Standardize categorical values |
 | `deal_value` | Deal value (revenue recorded in the CRM). Migrated deals: original Pipedrive product amount; Rework deals: Rework deal value (`0` → NULL) | Values never published. See [Revenue](./metric-definitions.md#4-revenue) |
 | `labels` | CRM label (e.g. `lead cks`) | Manual tag, so coverage is incomplete |
 | `is_alumni` | Manual "returning customer" tag | Captures only a fraction of real alumni, see metric definitions §6.2 |
@@ -48,7 +48,6 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `created_at` | Original deal creation date | For migrated records, preserve original Pipedrive date when available |
 | `updated_at` | Last update date | Validate timestamp behavior |
 | `closed_at` | Deal close date | Migrated records: Pipedrive won/lost time, else Rework close date |
-| `is_test_deal` | `TRUE` for internal CRM test deals | Exclude from every metric (`WHERE NOT is_test_deal`) |
 
 > For migrated records, historical Pipedrive dates are used when the corresponding Rework timestamps represent the migration event.
 
@@ -64,7 +63,7 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 | `deal_id` | Deal associated with the activity | Validate FK relationship to `fact_deal.deal_id` |
 | `activity_type` | Activity type, such as Call, Note, or Change Log | Standardize activity categories |
 | `activity_content` | Activity content or description | Raw values are not included in public outputs |
-| `owner_user_id` | User associated with the activity | Validate FK relationship to `dim_user.user_id` |
+| `activity_owner_user_id` | User who performed the activity | Validate FK relationship to `dim_user.user_id` |
 | `created_at` | Activity creation time | Validate timestamp consistency |
 | `updated_at` | Activity last update time | – |
 
@@ -144,6 +143,21 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 
 ---
 
+## `dim_class_schedule`
+
+**Grain:** One row per class
+
+**Source:** class-schedule Google Sheet filled in by Sales (`course_schedule`)
+
+| Field | Definition | Data Quality Consideration |
+|---|---|---|
+| `class_id` | Class identifier (sheet column `ID`) | Cast to integer; review values that fail the cast |
+| `class_code` | Class code (sheet column `Name`) | Joins from `fact_deal.class_code`; should be unique |
+| `class_start_date` | Class start date (sheet column `Ngày khai giảng`) | Entered by hand; review missing dates |
+| `course` | Course of the class (sheet column `Product`) | Review category consistency with `fact_deal.course_selected` |
+
+---
+
 ## Data Quality Review
 
 The Data Dictionary should be read together with the detailed Data Quality Review.
@@ -155,6 +169,6 @@ The review covers:
 3. High-null columns
 4. Low-value fields
 5. SCD Type 2 validation
-6. Automated data-quality controls: now implemented as Dataform assertions (see [transform/](../transform/README.md#data-tests-22-assertions))
+6. Automated data-quality controls as a next step
 
 → [View the full Data Quality Review](./data-quality-review.pdf)

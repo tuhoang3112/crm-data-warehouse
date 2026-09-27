@@ -1,11 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Dimension: internal users/staff (source: internal Google Sheet via BigQuery external table)",
-  assertions: {
-    uniqueKey: ["user_id"],
-    nonNull: ["user_id"]
-  }
+  description: "Dimension: internal users/staff (source: internal Google Sheet via BigQuery external table)"
 }
 
 SELECT

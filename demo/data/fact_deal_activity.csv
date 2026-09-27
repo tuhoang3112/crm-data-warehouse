@@ -1,4 +1,4 @@
-activity_id,deal_id,activity_type,activity_content,owner_user_id,created_at,updated_at
+activity_id,deal_id,activity_type,activity_content,activity_owner_user_id,created_at,updated_at
 500001,10001,Thay đổi hệ thống, Lê Bảo Nhi set Lê Anh Phúc as primary contact of deal Lê Anh Phúc - Combo: Course A + Course C - OFF ,1004,2025-04-08 23:31:49,2025-04-08 23:31:49
 500002,10001,Ghi chú,Demo activity,1004,2025-04-10 01:20:49,2025-04-10 01:20:49
 500003,10001,Thay đổi hệ thống, Lê Bảo Nhi move deal Lê Anh Phúc - Combo: Course A + Course C - OFF to pipeline Sales &#124; Prospecting Pipeline with stage Interested ,1004,2025-04-14 06:36:25,2025-04-14 06:36:25

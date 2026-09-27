@@ -11,7 +11,7 @@ It is also intended as the context for AI-assisted analysis, so an AI answer use
 
 | # | Rule | Why |
 |---|---|---|
-| G1 | **Exclude test deals:** `WHERE NOT is_test_deal` | 20 internal test deals created while testing the CRM (1 of them `won`) |
+| G1 | **Test deals** are marked lost in the CRM with `lost_reason = 'Trash: Đăng ký trùng deal'` | Internal deals created while testing the CRM. They share this lost reason with real duplicate registrations, so both are removed together at the Lead level of the funnel (section 1) |
 | G2 | **Time bucketing uses `fact_deal.created_at`** (deal creation date), never `closed_at` / `updated_at` | A deal created in June and won in October is a "June deal" in every trend chart. Name charts "Win rate by **created** month" to avoid ambiguity |
 | G3 | **Operational KPIs use `created_at >= 2026-01-01`.** Data-quality checks use full history | Records before 2026 were migrated from Pipedrive, and many already had outcomes at migration time. Full-history win rate (~55%) vs 2026 (~37%) is not a contradiction: they answer different questions |
 | G4 | **Never compare pipelines directly.** Report *Sales Prospecting*, *CS Retention* and *B2B* separately | Different processes and populations. B2B win rate is ~95% on a small volume, and merging it distorts every other number |
