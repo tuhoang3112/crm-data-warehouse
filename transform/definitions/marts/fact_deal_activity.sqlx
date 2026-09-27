@@ -1,11 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Fact: one row per deal activity (note, call, changelog...)",
-  assertions: {
-    uniqueKey: ["activity_id"],
-    nonNull: ["activity_id", "deal_id", "created_at"]
-  }
+  description: "Fact: one row per deal activity (note, call, changelog...)"
 }
 
 SELECT

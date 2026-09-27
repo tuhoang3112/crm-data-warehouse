@@ -1,6 +1,6 @@
 # CRM Data System: From Scattered CRM Data to a Trusted Sales Dashboard
 
-> An end-to-end data system (**Airbyte → BigQuery → Dataform → Power BI**) built on real company data after a CRM migration (Pipedrive → Rework CRM). It covers API ingestion, historical reconciliation, dimensional modeling, data tests, and one shared set of metric definitions.
+> An end-to-end data system (**Airbyte → BigQuery → Dataform → Power BI**) built on real company data after a CRM migration (Pipedrive → Rework CRM). It covers API ingestion, historical reconciliation, dimensional modeling, data-quality validation, and one shared set of metric definitions.
 
 ![Architecture](docs/architecture.png)
 
@@ -27,7 +27,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 | **Data Mart** | **Yes** | Power BI reads clean fact and dimension tables instead of raw API data |
 | **Schema** | Fact + dimension tables, with one snowflaked branch `dim_stage → dim_pipeline` | Each stage belongs to one pipeline, as in the CRM |
 | **Ingestion tool** | **Airbyte (self-hosted)**, custom low-code connector | Built in the Airbyte Connector Builder to handle the Rework API's auth, pagination and parent-child endpoints |
-| **Transformation** | **Dataform** | SQLX + Git, dependency graph via `ref()`, assertions (tests) and scheduling inside BigQuery |
+| **Transformation** | **Dataform** | SQLX + Git, dependency graph via `ref()` and scheduling inside BigQuery |
 
 ---
 
@@ -39,7 +39,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 | **Staff Google Sheet** | BigQuery external table |
 | **Class schedule** (Google Sheet filled in by Sales) | BigQuery external table `course_schedule`, modeled into `dim_class_schedule` (class ID, class code, class start date, course) |
 
-Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`), and `uniqueKey` assertions check every mart table.
+Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`).
 → [ingestion/README](ingestion/README.md)
 
 ---
@@ -62,14 +62,7 @@ Duplicates: each staging model keeps only the latest version per ID (`QUALIFY RO
 
 ## Transformation & data quality
 
-Dataform builds **6 staging views → 8 mart tables**. **23 assertions** are defined:
-
-- **Uniqueness / not-null** on every mart key
-- **Referential integrity**: deal → stage, deal → contact version, activity → deal, stage → pipeline
-- **Validity**: `deal_status ∈ {open, won, lost}`, `deal_value ≥ 0`, SCD2 date logic
-- **SCD2**: exactly one current version per contact, no overlaps
-- **Freshness**: raw data not older than a set threshold
-- **Class schedule**: unique class codes, no missing start dates
+Dataform builds **6 staging views → 8 mart tables**.
 
 Before the dashboard was built, a [Data Quality Review](docs/data-quality-review.pdf) was run on the mart. For example, it found a 99.97% orphan rate on `dim_contact.account_id`. Part of this is the business rule `account_id = 0` = contact without a company; the remaining orphans are still being investigated. The dashboard was also [reconciled](docs/testing-validation.md) against the previous Pipedrive-based dashboard and against Rework CRM.
 → [transform/README](transform/README.md)
@@ -90,7 +83,6 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 | Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Google Sheet) |
 | Tables | **10** raw (8 Airbyte + 2 Google Sheets) → **6** staging views → **8** mart tables |
 | Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
-| Data tests | **23** assertions defined |
 | Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
 | Data latency | *to be measured* |
 | Monthly cost | *to be measured* |
@@ -102,7 +94,7 @@ Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform prod
 ```text
 crm-data-warehouse/
 ├── ingestion/                  # Airbyte connector (Rework API) + Google Sheet source
-├── transform/                  # Dataform: staging, marts, assertions, monitoring
+├── transform/                  # Dataform: staging and mart models
 ├── orchestration/              # scheduling configs, cost & latency SQL
 ├── dashboard/                  # Power BI screenshots
 ├── demo/                       # fake-data generator for a shareable Power BI demo

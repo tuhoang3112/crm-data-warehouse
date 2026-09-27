@@ -10,7 +10,7 @@ Cloud Scheduler → start VM
 systemd         → Airbyte starts automatically on boot
 Airbyte         → scheduled sync → BigQuery raw
 Cloud Scheduler → stop VM
-Dataform        → scheduled "production" release: staging → marts → assertions
+Dataform        → scheduled "production" release: staging → marts
 Power BI        → scheduled dataset refresh, after Dataform finishes
 ```
 

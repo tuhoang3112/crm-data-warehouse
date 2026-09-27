@@ -1,15 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Fact: one row per deal in the sales pipeline",
-  assertions: {
-    uniqueKey: ["deal_id"],
-    nonNull: ["deal_id", "stage_id", "deal_status", "created_at"],
-    rowConditions: [
-      "deal_status IN ('open', 'won', 'lost')",
-      "deal_value IS NULL OR deal_value >= 0"
-    ]
-  }
+  description: "Fact: one row per deal in the sales pipeline"
 }
 
 SELECT

@@ -35,14 +35,13 @@ Airbyte runs self-hosted (Docker) on a GCP Compute Engine VM that is switched on
 | `pipeline`, `stage` | 4 / 24 | Full refresh | Reference data, tiny |
 | `contact_service`, `account_services` | – | Full refresh | Reference data |
 
-### Duplicate protection (two layers)
+### Duplicate protection
 
 1. **Raw:** the same record can appear more than once (e.g. re-synced after an update).
 2. **Staging:** every `stg_*` model keeps only the latest version of each record:
    ```sql
    QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _airbyte_extracted_at DESC) = 1
    ```
-3. **Test:** `uniqueKey` assertions on every mart table fail the run if a duplicate ever gets through.
 
 ### Recommended improvements (not yet applied, test in Connector Builder first)
 
@@ -74,7 +73,6 @@ These are written as recommendations rather than edits to the YAML, because the 
 The staff list (user ID, name, job title) is maintained by hand in a Google Sheet and exposed in BigQuery as an **external table** (`dw_rework_crm.user`). BigQuery reads the sheet live at query time, so there is no sync job to schedule.
 
 - It is declared in Dataform as a source ([`transform/definitions/declarations/user.sqlx`](../transform/definitions/declarations/user.sqlx)) and modeled into `dim_user`.
-- **Risk:** someone edits the sheet structure. This is covered by the `dim_user` `uniqueKey`/`nonNull` assertions and by `assert_owner_orphan_rate`, which flags a sudden jump in deals whose owner is missing from `dim_user`.
 - The Dataform service account needs viewer access to the sheet (share it with the service account's email).
 
 ---

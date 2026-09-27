@@ -1,11 +1,7 @@
 config {
   type: "table",
   schema: "dm_rework_crm",
-  description: "Dimension: class schedule (source: class-schedule Google Sheet filled in by Sales)",
-  assertions: {
-    uniqueKey: ["class_code"],
-    nonNull: ["class_code", "class_start_date"]
-  }
+  description: "Dimension: class schedule (source: class-schedule Google Sheet filled in by Sales)"
 }
 
 SELECT

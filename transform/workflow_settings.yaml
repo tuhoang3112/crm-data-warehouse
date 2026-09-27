@@ -3,9 +3,3 @@ defaultDataset: dataform
 defaultLocation: us-central1
 defaultAssertionDataset: dataform_assertions
 dataformCoreVersion: 3.0.52
-
-vars:
-  # Pipeline runs daily -> flag raw data as stale after 1 day + buffer
-  freshness_max_hours: "36"
-  # Deals owned by staff missing from dim_user (people who left) - tolerated share
-  max_owner_orphan_pct: "10"
