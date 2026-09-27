@@ -1,17 +1,25 @@
 stage_id,pipeline_id,stage_name
-101,2042,Lead In
-102,2042,Interested
-103,2042,Engaged
-104,2042,Needs Exploration
-105,2042,Solution Fit
-106,2042,Ready To Purchase
-107,2042,Payment Completion
-108,2037,Lead In
-109,2037,Interested
-110,2037,Engaged
-111,2037,Ready To Purchase
-112,2037,Payment Completion
-113,2576,Lead In
-114,2576,Needs Exploration
-115,2576,Ready To Purchase
-116,2576,Payment Completion
+77,2042,Lead In
+78,2042,Interested
+79,2042,Engaged
+80,2042,Needs Exploration
+91,2042,Solution Fit
+92,2042,Ready To Purchase
+224,2042,Payment Completion
+72,2037,Interested
+73,2037,Engaged
+74,2037,Needs Exploration
+75,2037,Solution Fit
+76,2037,Ready To Purchase
+216,2576,Qualified
+217,2576,Contact Made
+218,2576,Needs Discovery
+219,2576,Learning Design
+220,2576,Proposal
+221,2576,Final Negotiation
+222,2576,Quotation
+225,2754,Timing Not Ready - Short Term
+226,2754,Timing Not Ready – Mid Term
+227,2754,Timing Not Ready – Long Term
+228,2754,Re-Activated
+229,2754,Ready To Purchase

@@ -16,7 +16,7 @@ python demo/generate_demo_data.py --deals 8000
 Output: `demo/data/*.csv`, one file per table:
 `fact_deal`, `fact_deal_activity`, `dim_contact`, `dim_account`, `dim_user`, `dim_pipeline`, `dim_stage`, `dim_class_schedule`.
 
-Labels that Power BI measures filter on must match the real mart **exactly**. Pipeline names, Sales-pipeline stages, activity types and lost reasons are taken from the real mart. Stages of the CS and B2B pipelines are still **placeholders** (marked in the script) until they are replaced with the real list. Course names, prices, people and companies are intentionally fake.
+Labels that Power BI measures filter on must match the real mart **exactly**. Pipeline IDs/names, stage IDs/names, activity types and lost reasons are taken from the real mart. Course names, prices, people and companies are intentionally fake.
 
 ## 2. Load into Power BI
 

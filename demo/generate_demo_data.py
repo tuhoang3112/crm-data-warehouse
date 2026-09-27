@@ -28,27 +28,29 @@ END_DATE = date(2026, 9, 27)
 OUT_DIR = Path(__file__).parent / "data"
 
 # ---------------------------------------------------------------------------
-# Reference data - labels must match the real mart exactly, because Power BI
-# measures filter on them.
-#   Verified against the real mart: pipeline names, Sales pipeline stages,
-#   activity types, lost reasons.
-#   PLACEHOLDER (replace with the real values): stages of the CS and B2B
-#   pipelines.
+# Reference data - labels and IDs match the real mart exactly, because Power BI
+# measures filter on them (pipelines, stages, activity types, lost reasons).
 # ---------------------------------------------------------------------------
 
-# Real pipeline IDs and names from dm_rework_crm.dim_pipeline
-SALES, CS, B2B = 2042, 2037, 2576
+# Real pipeline IDs, names and stages (in funnel order) from dim_pipeline / dim_stage.
+# Nurturing's pipeline_id is the 4th ID seen in the mart profile.
+SALES, CS, B2B, NURTURING = 2042, 2037, 2576, 2754
 
 PIPELINES = {
     SALES: ("Sales | Prospecting Pipeline", [
-        "Lead In", "Interested", "Engaged", "Needs Exploration",
-        "Solution Fit", "Ready To Purchase", "Payment Completion"]),
-    CS: ("CS | Retention Pipeline", [  # PLACEHOLDER stages
-        "Lead In", "Interested", "Engaged", "Ready To Purchase", "Payment Completion"]),
-    B2B: ("B2B pipeline - Đào tạo doanh nghiệp", [  # PLACEHOLDER stages
-        "Lead In", "Needs Exploration", "Ready To Purchase", "Payment Completion"]),
+        (77, "Lead In"), (78, "Interested"), (79, "Engaged"), (80, "Needs Exploration"),
+        (91, "Solution Fit"), (92, "Ready To Purchase"), (224, "Payment Completion")]),
+    CS: ("CS | Retention Pipeline", [
+        (72, "Interested"), (73, "Engaged"), (74, "Needs Exploration"),
+        (75, "Solution Fit"), (76, "Ready To Purchase")]),
+    B2B: ("B2B pipeline - Đào tạo doanh nghiệp", [
+        (216, "Qualified"), (217, "Contact Made"), (218, "Needs Discovery"),
+        (219, "Learning Design"), (220, "Proposal"), (221, "Final Negotiation"), (222, "Quotation")]),
+    NURTURING: ("Nurturing Pipeline", [
+        (225, "Timing Not Ready - Short Term"), (226, "Timing Not Ready – Mid Term"),
+        (227, "Timing Not Ready – Long Term"), (228, "Re-Activated"), (229, "Ready To Purchase")]),
 }
-PIPELINE_WEIGHTS = {SALES: 0.85, CS: 0.10, B2B: 0.05}
+PIPELINE_WEIGHTS = {SALES: 0.84, CS: 0.10, B2B: 0.05, NURTURING: 0.01}
 
 # Lost reasons allowed at each Sales-pipeline stage (from the funnel rules)
 LOST_REASONS_BY_STAGE = {
@@ -145,13 +147,11 @@ def main(n_deals):
 
     # --- dim_pipeline / dim_stage ------------------------------------------
     dim_pipeline, dim_stage, stage_ids = [], [], {}
-    sid = 100
     for pid, (pname, stages) in PIPELINES.items():
         dim_pipeline.append({"pipeline_id": pid, "pipeline_name": pname, "pipeline_content": None})
-        for s in stages:
-            sid += 1
-            stage_ids[(pid, s)] = sid
-            dim_stage.append({"stage_id": sid, "pipeline_id": pid, "stage_name": s})
+        for sid, sname in stages:
+            stage_ids[(pid, sname)] = sid
+            dim_stage.append({"stage_id": sid, "pipeline_id": pid, "stage_name": sname})
 
     # --- dim_user ------------------------------------------------------------
     dim_user, sales_ids, cs_ids = [], [], []
@@ -236,7 +236,7 @@ def main(n_deals):
 
     for deal_id in range(10_001, 10_001 + n_deals):
         pid = rng.choices(list(PIPELINE_WEIGHTS), weights=list(PIPELINE_WEIGHTS.values()))[0]
-        stages = PIPELINES[pid][1]
+        stages = [name for _, name in PIPELINES[pid][1]]
         # A deal is created on or after its contact's creation date
         contact_id = rng.randint(1, n_contacts)
         contact_created = contact_versions[contact_id][0]["created_at"]
@@ -250,9 +250,11 @@ def main(n_deals):
 
         # Outcome: recent deals are more likely to still be open
         p_open = 0.65 if age_days < 21 else 0.25 if age_days < 60 else 0.04
-        p_won = {SALES: 0.38, CS: 0.62, B2B: 0.80}[pid]
+        p_won = {SALES: 0.38, CS: 0.62, B2B: 0.80, NURTURING: 0.0}[pid]
         r = rng.random()
         status = "open" if r < p_open else ("won" if rng.random() < p_won else "lost")
+        if pid == NURTURING:  # parked leads waiting for a later class
+            status = "open" if rng.random() < 0.7 else "lost"
 
         # How far the deal progressed through the stages
         last = len(stages) - 1
