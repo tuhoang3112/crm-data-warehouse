@@ -5,7 +5,7 @@ Airbyte runs on a GCP Compute Engine VM. To avoid paying for a VM running 24/7, 
 ## Flow
 
 ```text
-Daily:
+Daily, 12:00:
 Cloud Scheduler → start VM
 systemd         → Airbyte starts automatically on boot
 Airbyte         → scheduled sync → BigQuery raw
@@ -42,7 +42,7 @@ Based on how the models are built:
 
 ## To document
 
-- [ ] Exact daily schedule times
+- [ ] Exact times of each step (the pipeline starts at 12:00 daily)
 - [ ] Alert setup (failed sync / failed run / late data)
 - [ ] Access control setup
 - [ ] Cost control setup and monthly cost

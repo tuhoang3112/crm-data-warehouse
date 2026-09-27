@@ -23,7 +23,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 | # | Question | Answer |
 |---|---|---|
 | 1 | **Where do the enrolment/revenue numbers come from, and why did sources disagree?** | Now one source: Rework CRM API → `fact_deal`. Numbers disagreed because **(a)** the old reports still read from the retired Pipedrive database, and **(b)** reports on Rework used the **import time** as the creation date for all migrated records. The original Pipedrive dates survive in Rework custom fields, so the model restores them: `COALESCE(pipedrive_created_at, rework_created_at)`. Separately, some tracking values on real deals were recorded inconsistently at the source (e.g. `fanpage` vs `fanpage_tm`); these are merged under the rules in [metric-definitions.md](docs/metric-definitions.md) |
-| 2 | **How far behind reality is the dashboard?** | The pipeline runs **daily**; exact latency is *not yet measured*. The query is ready ([`pipeline_run_history.sql`](orchestration/sql/pipeline_run_history.sql)), and `assert_source_freshness` fails the Dataform run when raw data is older than a set threshold |
+| 2 | **How far behind reality is the dashboard?** | The pipeline runs **daily at 12:00**; exact latency is *not yet measured*. The query is ready ([`pipeline_run_history.sql`](orchestration/sql/pipeline_run_history.sql)), and `assert_source_freshness` fails the Dataform run when raw data is older than a set threshold |
 | 3 | **When a dashboard number is wrong, how long does it take to trace it to the source?** | *Not yet measured.* The trace path exists: every metric lists its source tables ([metric-definitions](docs/metric-definitions.md)), Dataform's `ref()` graph links mart → staging → raw, and each raw row keeps `_airbyte_extracted_at` |
 | 4 | **What does the warehouse cost per month, and is it over budget?** | *Not yet measured.* Query ready: [`cost_monitoring.sql`](orchestration/sql/cost_monitoring.sql) |
 | 5 | **When the source changes structure, does the pipeline break, and how fast do we know?** | CRM custom fields are stored inside a JSON array (`form`), so a **new CRM field does not change the raw table schema** and does not break the pipeline. It is only picked up once it is added to the staging pivot. `assert_new_custom_fields` is written to flag new fields on the next run. Details: [ingestion/README](ingestion/README.md#schema-change-handling) |
@@ -50,6 +50,7 @@ The company migrated its CRM from **Pipedrive to Rework CRM**. After that:
 |---|---|
 | **Rework CRM API**: deals, activities, contacts, accounts, pipelines, stages, services (8 streams) | Custom Airbyte connector ([YAML](ingestion/airbyte/rework-crm-connector.yaml)). `deal` and `contact` sync incrementally on `last_update`; the other streams are full refresh |
 | **Staff Google Sheet** | BigQuery external table |
+| **Class schedule** (Excel, filled in by Sales) | Loaded into BigQuery as `dim_class_schedule`: class code, class start date, course. *Model code not yet in this repo* |
 
 Duplicates: each staging model keeps only the latest version per ID (`QUALIFY ROW_NUMBER()`), and `uniqueKey` assertions check every mart table.
 → [ingestion/README](ingestion/README.md)
@@ -89,7 +90,7 @@ Before the dashboard was built, a [Data Quality Review](docs/data-quality-review
 
 ## Orchestration
 
-Runs **daily**: VM start → Airbyte sync → VM stop → Dataform production run → **Power BI scheduled refresh** (after Dataform finishes).
+Runs **daily at 12:00**: VM start → Airbyte sync → VM stop → Dataform production run → **Power BI scheduled refresh** (after Dataform finishes).
 → [orchestration/README](orchestration/README.md)
 
 ---
@@ -98,11 +99,11 @@ Runs **daily**: VM start → Airbyte sync → VM stop → Dataform production ru
 
 | | |
 |---|---|
-| Sources | **2** (Rework CRM API with 8 streams, staff Google Sheet) |
+| Sources | **3** (Rework CRM API with 8 streams, staff Google Sheet, class-schedule Excel) |
 | Tables | **9** raw → **6** staging views → **7** mart tables |
 | Volume | ~**25.6k** deals · ~**54k** activities · ~**26.7k** contacts (history since 2021, incl. migrated Pipedrive data) |
 | Data tests | **22** assertions defined |
-| Refresh frequency | **Daily** (Airbyte → Dataform → Power BI) |
+| Refresh frequency | **Daily at 12:00** (Airbyte → Dataform → Power BI) |
 | Data latency | *to be measured* |
 | Monthly cost | *to be measured* |
 
@@ -110,6 +111,7 @@ Runs **daily**: VM start → Airbyte sync → VM stop → Dataform production ru
 
 ## Planned / in progress
 
+- [ ] Add the `dim_class_schedule` source and model to `transform/`
 - [ ] Run the 22 assertions on production data and record results
 - [ ] Measure data latency and monthly cost (queries in [`orchestration/sql/`](orchestration/sql/))
 - [ ] Document the exact schedule times, alert and access setup, with screenshots in [`docs/proof-of-running/`](docs/proof-of-running/)
@@ -135,6 +137,7 @@ crm-data-warehouse/
 ├── transform/                  # Dataform: staging, marts, assertions, monitoring
 ├── orchestration/              # scheduling configs, cost & latency SQL
 ├── dashboard/                  # Power BI screenshots
+├── demo/                       # fake-data generator for a shareable Power BI demo
 └── docs/
     ├── architecture.png        # data flow source → BI
     ├── data-model.png          # ERD

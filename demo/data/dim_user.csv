@@ -1,0 +1,10 @@
+user_id,username,full_name,job_title,email
+1001,user1001,Phạm Văn Lan,Sales Manager,user1001@example.com
+1002,user1002,Vũ Ngọc Giang,Sales Consultant,user1002@example.com
+1003,user1003,Phạm Anh Tâm,Sales Consultant,user1003@example.com
+1004,user1004,Lê Bảo Nhi,Sales Consultant,user1004@example.com
+1005,user1005,Trần Văn Châu,Sales Consultant,user1005@example.com
+1006,user1006,Phan Ngọc Sơn,Sales Consultant,user1006@example.com
+1007,user1007,Nguyễn Gia Hùng,Customer Service Manager,user1007@example.com
+1008,user1008,Ngô Ngọc Phúc,Customer Service,user1008@example.com
+1009,user1009,Võ Văn Hà,Customer Service,user1009@example.com

@@ -1,0 +1,95 @@
+class_id,class_code,class_start_date,course
+1,A01,2025-01-17,Course A - Foundation
+2,A02,2025-03-30,Course A - Foundation
+3,A03,2025-05-26,Course A - Foundation
+4,A04,2025-08-07,Course A - Foundation
+5,A05,2025-09-22,Course A - Foundation
+6,A06,2025-11-11,Course A - Foundation
+7,A07,2026-01-07,Course A - Foundation
+8,A08,2026-02-21,Course A - Foundation
+9,A09,2026-04-19,Course A - Foundation
+10,A10,2026-06-11,Course A - Foundation
+11,A11,2026-08-24,Course A - Foundation
+12,A12,2026-11-02,Course A - Foundation
+13,B01,2025-01-25,Course B - Foundation
+14,B02,2025-03-20,Course B - Foundation
+15,B03,2025-05-17,Course B - Foundation
+16,B04,2025-07-23,Course B - Foundation
+17,B05,2025-10-06,Course B - Foundation
+18,B06,2025-12-13,Course B - Foundation
+19,B07,2026-02-21,Course B - Foundation
+20,B08,2026-04-24,Course B - Foundation
+21,B09,2026-06-29,Course B - Foundation
+22,B10,2026-09-04,Course B - Foundation
+23,B11,2026-11-03,Course B - Foundation
+24,C01,2025-01-17,Course C - Advanced
+25,C02,2025-03-12,Course C - Advanced
+26,C03,2025-05-02,Course C - Advanced
+27,C04,2025-07-16,Course C - Advanced
+28,C05,2025-08-31,Course C - Advanced
+29,C06,2025-11-02,Course C - Advanced
+30,C07,2026-01-09,Course C - Advanced
+31,C08,2026-03-12,Course C - Advanced
+32,C09,2026-04-27,Course C - Advanced
+33,C10,2026-07-04,Course C - Advanced
+34,C11,2026-08-28,Course C - Advanced
+35,C12,2026-10-13,Course C - Advanced
+36,D01,2025-01-29,Course D - Advanced
+37,D02,2025-03-30,Course D - Advanced
+38,D03,2025-05-30,Course D - Advanced
+39,D04,2025-08-12,Course D - Advanced
+40,D05,2025-10-23,Course D - Advanced
+41,D06,2025-12-23,Course D - Advanced
+42,D07,2026-02-11,Course D - Advanced
+43,D08,2026-03-29,Course D - Advanced
+44,D09,2026-06-12,Course D - Advanced
+45,D10,2026-08-12,Course D - Advanced
+46,D11,2026-09-28,Course D - Advanced
+47,E01,2025-01-16,Course E - Specialist
+48,E02,2025-03-04,Course E - Specialist
+49,E03,2025-05-07,Course E - Specialist
+50,E04,2025-06-23,Course E - Specialist
+51,E05,2025-08-28,Course E - Specialist
+52,E06,2025-11-08,Course E - Specialist
+53,E07,2025-12-30,Course E - Specialist
+54,E08,2026-02-25,Course E - Specialist
+55,E09,2026-04-14,Course E - Specialist
+56,E10,2026-06-28,Course E - Specialist
+57,E11,2026-09-09,Course E - Specialist
+58,E12,2026-11-11,Course E - Specialist
+59,F01,2025-01-29,Course F - Short course
+60,F02,2025-04-03,Course F - Short course
+61,F03,2025-05-19,Course F - Short course
+62,F04,2025-07-22,Course F - Short course
+63,F05,2025-09-07,Course F - Short course
+64,F06,2025-11-04,Course F - Short course
+65,F07,2026-01-09,Course F - Short course
+66,F08,2026-03-13,Course F - Short course
+67,F09,2026-05-15,Course F - Short course
+68,F10,2026-07-15,Course F - Short course
+69,F11,2026-09-08,Course F - Short course
+70,F12,2026-11-21,Course F - Short course
+71,G01,2025-01-17,Program G - Professional
+72,G02,2025-03-24,Program G - Professional
+73,G03,2025-05-30,Program G - Professional
+74,G04,2025-07-24,Program G - Professional
+75,G05,2025-09-14,Program G - Professional
+76,G06,2025-11-06,Program G - Professional
+77,G07,2026-01-02,Program G - Professional
+78,G08,2026-02-20,Program G - Professional
+79,G09,2026-04-27,Program G - Professional
+80,G10,2026-07-01,Program G - Professional
+81,G11,2026-08-24,Program G - Professional
+82,G12,2026-10-22,Program G - Professional
+83,Course01,2025-02-09,Combo: Course A + Course C
+84,Course02,2025-04-19,Combo: Course A + Course C
+85,Course03,2025-07-02,Combo: Course A + Course C
+86,Course04,2025-08-18,Combo: Course A + Course C
+87,Course05,2025-10-02,Combo: Course A + Course C
+88,Course06,2025-11-30,Combo: Course A + Course C
+89,Course07,2026-02-02,Combo: Course A + Course C
+90,Course08,2026-04-06,Combo: Course A + Course C
+91,Course09,2026-05-24,Combo: Course A + Course C
+92,Course10,2026-07-10,Combo: Course A + Course C
+93,Course11,2026-09-10,Combo: Course A + Course C
+94,Course12,2026-10-31,Combo: Course A + Course C
