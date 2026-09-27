@@ -58,18 +58,27 @@ Airbyte runs self-hosted (Docker) on a GCP Compute Engine VM that is switched on
 
 ## 2. Staff Google Sheet
 
-The staff list (user ID, name, job title) is maintained by hand in a Google Sheet and exposed in BigQuery as an **external table** (`dw_rework_crm.user`). BigQuery reads the sheet live at query time, so there is no sync job to schedule.
+The staff list (user ID, name, job title) is maintained by hand in a Google Sheet and connected to BigQuery as an **external table** (`user`). BigQuery reads the sheet live at query time, so there is no sync job to schedule.
 
-- It is declared in Dataform as a source ([`transform/definitions/declarations/user.sqlx`](../transform/definitions/declarations/user.sqlx)) and modeled into `dim_user`.
-- The Dataform service account needs viewer access to the sheet (share it with the service account's email).
+- Declared in Dataform as a source ([`declarations/user.sqlx`](../transform/definitions/declarations/user.sqlx)) and modeled into `dim_user` ([model](../transform/definitions/marts/dim_user.sqlx)):
+
+  | Sheet column | `dim_user` column |
+  |---|---|
+  | `id` | `user_id` |
+  | `username` | `username` |
+  | `last_name` + `first_name` | `full_name` |
+  | `title` | `job_title` |
+  | `email` | `email` |
+
+- `fact_deal.owner_user_id` and `fact_deal_activity.activity_owner_user_id` join to `dim_user.user_id`.
 
 ---
 
 ## 3. Class schedule Google Sheet
 
-The class schedule (class ID, class code, start date, course) is filled in by Sales in a Google Sheet and connected to BigQuery as an **external table** (`course_schedule`).
+The class schedule (class ID, class code, start date, course) is filled in by Sales in a Google Sheet and connected to BigQuery as an **external table** (`course_schedule`). BigQuery reads the sheet live at query time, so there is no sync job to schedule.
 
-- It is declared in Dataform as a source ([`transform/definitions/declarations/course_schedule.sqlx`](../transform/definitions/declarations/course_schedule.sqlx)) and modeled into `dim_class_schedule` ([model](../transform/definitions/marts/dim_class_schedule.sqlx)):
+- Declared in Dataform as a source ([`declarations/course_schedule.sqlx`](../transform/definitions/declarations/course_schedule.sqlx)) and modeled into `dim_class_schedule` ([model](../transform/definitions/marts/dim_class_schedule.sqlx)):
 
   | Sheet column | `dim_class_schedule` column |
   |---|---|
@@ -79,3 +88,5 @@ The class schedule (class ID, class code, start date, course) is filled in by Sa
   | `Product` | `course` |
 
 - `fact_deal.class_code` joins to `dim_class_schedule.class_code`.
+
+> For both sheets, the Dataform service account needs viewer access to the sheet (share it with the service account's email).
