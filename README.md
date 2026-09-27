@@ -96,7 +96,6 @@ crm-data-warehouse/
 ├── ingestion/                  # Airbyte connector (Rework API) + Google Sheet source
 ├── transform/                  # Dataform: staging and mart models
 ├── orchestration/              # how the daily schedule is set up
-├── dashboard/                  # Power BI screenshots
 ├── demo/                       # fake-data generator for a shareable Power BI demo
 └── docs/
     ├── architecture.png        # data flow source → BI

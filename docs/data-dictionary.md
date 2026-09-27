@@ -143,6 +143,21 @@ The Data Mart follows a **Snowflake Schema** centered around Deals and Deal Acti
 
 ---
 
+## `dim_class_schedule`
+
+**Grain:** One row per class
+
+**Source:** class-schedule Google Sheet filled in by Sales (`course_schedule`)
+
+| Field | Definition | Data Quality Consideration |
+|---|---|---|
+| `class_id` | Class identifier (sheet column `ID`) | Cast to integer; review values that fail the cast |
+| `class_code` | Class code (sheet column `Name`) | Joins from `fact_deal.class_code`; should be unique |
+| `class_start_date` | Class start date (sheet column `Ngày khai giảng`) | Entered by hand; review missing dates |
+| `course` | Course of the class (sheet column `Product`) | Review category consistency with `fact_deal.course_selected` |
+
+---
+
 ## Data Quality Review
 
 The Data Dictionary should be read together with the detailed Data Quality Review.
